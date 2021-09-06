@@ -75,7 +75,7 @@ public class ProcessmodificateView extends HorizontalLayout {
 
     private TextArea initTaxIDsTextArea() {
         TextArea taxIds = new TextArea();
-        taxIds.setLabel("Contragents tax IDs");
+        taxIds.setLabel("Contragents tax IDs (or full buiseness keys)");
         return taxIds;
     }
 
