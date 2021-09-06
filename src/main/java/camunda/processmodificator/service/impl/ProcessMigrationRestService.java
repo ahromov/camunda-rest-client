@@ -1,4 +1,4 @@
-package camunda.processmodificator.service;
+package camunda.processmodificator.service.impl;
 
 import camunda.processmodificator.dto.request.CamundaActivityInstanceRequest;
 import camunda.processmodificator.dto.request.CamundaProcessInstanceRequest;
@@ -7,6 +7,7 @@ import camunda.processmodificator.dto.response.CamundaActivityInstanceResponse;
 import camunda.processmodificator.dto.response.CamundaProcessInstanceMigrationResponse;
 import camunda.processmodificator.dto.response.CamundaProcessInstanceResponse;
 import camunda.processmodificator.model.FormModel;
+import camunda.processmodificator.service.CamundaRestService;
 import camunda.processmodificator.service.routes.CamundaApiRoutes;
 import camunda.processmodificator.service.utils.CamundaApiUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,7 @@ import java.util.List;
 
 @Service
 @Slf4j
-public class ProcessMigrationRestService {
+public class ProcessMigrationRestService implements CamundaRestService {
 
     private RestTemplate restTemplate;
 
@@ -30,7 +31,7 @@ public class ProcessMigrationRestService {
         this.restTemplate = restTemplate;
     }
 
-    public void migrateProcessInstance(FormModel formModel) {
+    public void send(FormModel formModel) {
         HttpHeaders headers = new HttpHeaders();
 
         CamundaApiUtils.authenticate(headers, formModel);
@@ -47,8 +48,6 @@ public class ProcessMigrationRestService {
                     restTemplate.exchange(CamundaApiUtils.getUrl(formModel, CamundaApiRoutes.HISTORY_ACTIVITY_RESOURCE_PATH), HttpMethod.POST, activityInstanceRequestHttpEntity, CamundaActivityInstanceResponse[].class);
 
             HttpEntity<CamundaProcessMigrationRequest> processInstanceMigrationRequestHttpEntity = prepareProcessInstanceMigrationRequestHttpEntity(headers, formModel, processInstanceResponse, activityInstanceResponse);
-
-            log.info("processInstanceMigrationRequestHttpEntity={}", processInstanceMigrationRequestHttpEntity);
 
             ResponseEntity<CamundaProcessInstanceMigrationResponse> processInstanceMigrationResponse =
                     restTemplate.exchange(CamundaApiUtils.getUrl(formModel, CamundaApiRoutes.PROCESS_MIGRATION_RESOURCE_PATH), HttpMethod.POST, processInstanceMigrationRequestHttpEntity, CamundaProcessInstanceMigrationResponse.class);
@@ -83,7 +82,7 @@ public class ProcessMigrationRestService {
         CamundaProcessMigrationRequest.Instructions instructions = CamundaProcessMigrationRequest.Instructions.builder()
                 .sourceActivityIds(sourceActivityIds)
                 .targetActivityIds(targetActivityIds)
-                .updateEventTrigger(true)
+                .updateEventTrigger(false)
                 .build();
         return instructions;
     }

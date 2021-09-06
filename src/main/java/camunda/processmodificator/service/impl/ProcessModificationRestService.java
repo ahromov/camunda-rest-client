@@ -1,4 +1,4 @@
-package camunda.processmodificator.service;
+package camunda.processmodificator.service.impl;
 
 import camunda.processmodificator.dto.request.CamundaActivityInstanceRequest;
 import camunda.processmodificator.dto.request.CamundaProcessInstanceModificationRequest;
@@ -7,6 +7,7 @@ import camunda.processmodificator.dto.response.CamundaActivityInstanceResponse;
 import camunda.processmodificator.dto.response.CamundaProcessInstanceModificationResponse;
 import camunda.processmodificator.dto.response.CamundaProcessInstanceResponse;
 import camunda.processmodificator.model.FormModel;
+import camunda.processmodificator.service.CamundaRestService;
 import camunda.processmodificator.service.routes.CamundaApiRoutes;
 import camunda.processmodificator.service.utils.CamundaApiUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +27,7 @@ import java.util.Map;
 
 @Service
 @Slf4j
-public class ProcessModificationRestService {
+public class ProcessModificationRestService implements CamundaRestService {
 
     private RestTemplate restTemplate;
 
@@ -34,7 +35,7 @@ public class ProcessModificationRestService {
         this.restTemplate = restTemplate;
     }
 
-    public void moveTokens(FormModel formModel) {
+    public void send(FormModel formModel) {
         HttpHeaders headers = new HttpHeaders();
 
         CamundaApiUtils.authenticate(headers, formModel);
@@ -81,8 +82,8 @@ public class ProcessModificationRestService {
         currentActivity.put("type", "cancel");
         currentActivity.put("activityId", CamundaApiUtils.getObject(activityInstanceResponse).getActivityId());
         Map<String, String> finalActivity = new HashMap<>();
-        finalActivity.put("type", formModel.getFinalActivityPosition());
-        finalActivity.put("activityId", formModel.getFinalActivityID());
+        finalActivity.put("type", formModel.getTargetActivityPosition());
+        finalActivity.put("activityId", formModel.getTargetActivityID());
         return List.of(currentActivity, finalActivity);
     }
 
@@ -93,7 +94,7 @@ public class ProcessModificationRestService {
                     CamundaApiUtils.getObject(processInstanceResponse).getBusinessKey(),
                     CamundaApiUtils.getObject(activityInstanceResponse).getActivityId(),
                     CamundaApiUtils.getObject(activityInstanceResponse).getActivityName(),
-                    formModel.getFinalActivityID());
+                    formModel.getTargetActivityID());
         }
     }
 }

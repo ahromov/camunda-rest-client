@@ -1,8 +1,9 @@
-package camunda.processmodificator.service;
+package camunda.processmodificator.service.impl;
 
 import camunda.processmodificator.dto.request.*;
 import camunda.processmodificator.dto.response.*;
 import camunda.processmodificator.model.FormModel;
+import camunda.processmodificator.service.CamundaRestService;
 import camunda.processmodificator.service.routes.CamundaApiRoutes;
 import camunda.processmodificator.service.utils.CamundaApiUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +19,7 @@ import java.util.Map;
 
 @Service
 @Slf4j
-public class ExecutionLocalVariablesRestService {
+public class ExecutionLocalVariablesRestService implements CamundaRestService {
 
     private RestTemplate restTemplate;
     private String variableValue;
@@ -27,7 +28,7 @@ public class ExecutionLocalVariablesRestService {
         this.restTemplate = restTemplate;
     }
 
-    public void setVariable(FormModel formModel) {
+    public void send(FormModel formModel) {
         HttpHeaders headers = new HttpHeaders();
 
         CamundaApiUtils.authenticate(headers, formModel);

@@ -1,14 +1,16 @@
 package camunda.processmodificator.model;
 
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 import java.util.LinkedList;
 import java.util.List;
 
 
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 @Getter
+@Setter
 public class FormModel {
 
     private String serverAddress;
@@ -17,8 +19,8 @@ public class FormModel {
     private String variableName;
     private String variableValue;
     private String variableType;
-    private String finalActivityID;
-    private String finalActivityPosition;
+    private String targetActivityID;
+    private String targetActivityPosition;
     private String engineLogin;
     private String enginePassword;
 
