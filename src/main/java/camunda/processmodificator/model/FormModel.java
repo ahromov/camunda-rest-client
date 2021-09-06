@@ -14,6 +14,9 @@ public class FormModel {
     private String serverAddress;
     private List<String[]> taxIDs;
     private String targetProcessDefinitionId;
+    private String variableName;
+    private String variableValue;
+    private String variableType;
     private String finalActivityID;
     private String finalActivityPosition;
     private String engineLogin;

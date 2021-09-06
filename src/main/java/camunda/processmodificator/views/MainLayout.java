@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import camunda.processmodificator.views.executionlocalvariable.ExecutionlocalvariableView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.Text;
@@ -123,6 +124,7 @@ public class MainLayout extends AppLayout {
 
                 new MenuItemInfo("Process modificate", "la la-stop", ProcessmodificateView.class), //
 
+                new MenuItemInfo("Execution variables", "la la-stop", ExecutionlocalvariableView.class) //
         };
         List<RouterLink> links = new ArrayList<>();
         for (MenuItemInfo menuItemInfo : menuItems) {

@@ -7,4 +7,5 @@ public class CamundaApiRoutes {
     public static final String HISTORY_PROCESS_INSTANCE_RESOURCE_PATH = BASE_ROUTE + "/history/process-instance";
     public static final String HISTORY_ACTIVITY_RESOURCE_PATH = BASE_ROUTE + "/history/activity-instance";
     public static final String PROCESS_MIGRATION_RESOURCE_PATH = BASE_ROUTE + "/migration/execute";
+    public static final String EXECUTION_RESOURCE_PATH = BASE_ROUTE + "/execution";
 }
