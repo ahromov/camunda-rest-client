@@ -6,6 +6,9 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 import org.vaadin.artur.helpers.LaunchUtil;
 import com.vaadin.flow.component.dependency.NpmPackage;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 /**
  * The entry point of the Spring Boot application.
  */
@@ -17,5 +20,4 @@ public class Application extends SpringBootServletInitializer {
     public static void main(String[] args) {
         LaunchUtil.launchBrowserInDevelopmentMode(SpringApplication.run(Application.class, args));
     }
-
 }
