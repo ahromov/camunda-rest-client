@@ -20,6 +20,7 @@ public class MainForm extends FormLayout {
     protected FormLayout formLayout;
     protected Notification notification;
     protected TextField serverAddress;
+    protected TextField processDefinitionKey;
     protected TextArea taxIds;
     protected TextField login;
     protected TextField password;
@@ -38,8 +39,9 @@ public class MainForm extends FormLayout {
         initServerAddressField();
         initLoginField();
         initPasswordField();
+        initProcessDefinitionKey();
         initTaxIDsTextArea();
-        formLayout.add(serverAddress, login, password, taxIds);
+        formLayout.add(serverAddress, login, password, processDefinitionKey, taxIds);
         for (Component c : components) {
             formLayout.add(c);
         }
@@ -59,6 +61,13 @@ public class MainForm extends FormLayout {
         serverAddress.setLabel("Server address");
         serverAddress.setPlaceholder("http://localhost:8080");
         serverAddress.setRequired(true);
+    }
+
+    protected void initProcessDefinitionKey() {
+        processDefinitionKey = new TextField();
+        processDefinitionKey.setLabel("Process definition key");
+        processDefinitionKey.setPlaceholder("camunda-process-application");
+        processDefinitionKey.setRequired(true);
     }
 
     protected void initTaxIDsTextArea() {
@@ -93,6 +102,7 @@ public class MainForm extends FormLayout {
 
     protected void validateAndBindBean() {
         formBinder.forField(serverAddress).bind(FormModel::getServerAddress, FormModel::setServerAddress);
+        formBinder.forField(processDefinitionKey).bind(FormModel::getProcessDefinitionKey, FormModel::setProcessDefinitionKey);
         formBinder.forField(login).bind(FormModel::getEngineLogin, FormModel::setEngineLogin);
         formBinder.forField(password).bind(FormModel::getEnginePassword, FormModel::setEnginePassword);
         formBinder.forField(taxIds).bind(formModel -> taxIds.getValue(), FormModel::setTaxIDs);

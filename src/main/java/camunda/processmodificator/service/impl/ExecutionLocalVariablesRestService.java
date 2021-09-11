@@ -34,7 +34,7 @@ public class ExecutionLocalVariablesRestService implements CamundaRestService {
         CamundaApiUtils.authenticate(headers, formModel);
 
         formModel.getTaxIDs().forEach(tax -> {
-            HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax);
+            HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax, formModel);
 
             ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse =
                     restTemplate.exchange(CamundaApiUtils.getUrl(formModel, CamundaApiRoutes.HISTORY_PROCESS_INSTANCE_RESOURCE_PATH), HttpMethod.POST, processInstanceRequestHttpEntity, CamundaProcessInstanceResponse[].class);

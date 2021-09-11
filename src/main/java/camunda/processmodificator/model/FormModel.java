@@ -16,6 +16,7 @@ public class FormModel {
     private String serverAddress;
     private List<String[]> taxIDs;
     private String targetProcessDefinitionId;
+    private String processDefinitionKey;
     private String variableName;
     private String variableValue;
     private String variableType;

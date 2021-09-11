@@ -26,10 +26,10 @@ public class CamundaApiUtils {
         return formModel.getServerAddress() + path;
     }
 
-    public static HttpEntity<CamundaProcessInstanceRequest> prepareProcessInstanceRequestHttpEntity(HttpHeaders headers, String[] tax) {
+    public static HttpEntity<CamundaProcessInstanceRequest> prepareProcessInstanceRequestHttpEntity(HttpHeaders headers, String[] tax, FormModel formModel) {
         CamundaProcessInstanceRequest requestBody = CamundaProcessInstanceRequest.builder()
                 .processInstanceBusinessKeyLike(tax[0])
-                .processDefinitionKey("CreditConveyorSmallBusiness")
+                .processDefinitionKey(formModel.getProcessDefinitionKey())
                 .finished(false)
                 .build();
         return new HttpEntity<>(requestBody, headers);
