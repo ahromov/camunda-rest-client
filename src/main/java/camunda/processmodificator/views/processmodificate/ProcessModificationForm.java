@@ -7,7 +7,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 
-import java.util.List;
+import java.util.Arrays;
 
 public class ProcessModificationForm extends MainForm {
 
@@ -36,7 +36,7 @@ public class ProcessModificationForm extends MainForm {
 
     private Select<String> initPositionsSelect() {
         position.setLabel("Position");
-        position.setItems(List.of("startAfterActivity", "startBeforeActivity"));
+        position.setItems(Arrays.asList("startAfterActivity", "startBeforeActivity"));
         return position;
     }
 

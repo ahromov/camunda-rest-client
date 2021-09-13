@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -63,11 +64,11 @@ public class ProcessMigrationRestService implements CamundaRestService {
         CamundaProcessMigrationRequest.MigrationPlan migrationPlan = CamundaProcessMigrationRequest.MigrationPlan.builder()
                 .sourceProcessDefinitionId(processDefinitionId)
                 .targetProcessDefinitionId(formModel.getTargetProcessDefinitionId())
-                .instructions(List.of(instructions))
+                .instructions(Arrays.asList(instructions))
                 .build();
         CamundaProcessMigrationRequest camundaProcessInstanceMigrationRequest = CamundaProcessMigrationRequest.builder()
                 .migrationPlan(migrationPlan)
-                .processInstanceIds(List.of(processInstanceId))
+                .processInstanceIds(Arrays.asList(processInstanceId))
                 .skipCustomListeners(true)
                 .build();
         HttpEntity<CamundaProcessMigrationRequest> activityInstanceRequestHttpEntity = new HttpEntity<>(camundaProcessInstanceMigrationRequest, headers);

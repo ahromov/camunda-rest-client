@@ -21,6 +21,7 @@ import org.springframework.web.client.RestTemplate;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +85,7 @@ public class ProcessModificationRestService implements CamundaRestService {
         Map<String, String> finalActivity = new HashMap<>();
         finalActivity.put("type", formModel.getTargetActivityPosition());
         finalActivity.put("activityId", formModel.getTargetActivityID());
-        return List.of(currentActivity, finalActivity);
+        return Arrays.asList(currentActivity, finalActivity);
     }
 
     private void logResponse(FormModel formModel, ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse, ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse, Integer statusCode) {

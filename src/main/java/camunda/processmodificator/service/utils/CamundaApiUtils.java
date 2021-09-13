@@ -51,7 +51,7 @@ public class CamundaApiUtils {
         sortBy.put("sortBy", "endTime");
         Map<String, String> sortOrder = new HashMap<>();
         sortOrder.put("sortOrder", "desc");
-        return List.of(sortBy, sortOrder);
+        return Arrays.asList(sortBy, sortOrder);
     }
 
     public static <T> T getObject(ResponseEntity<T[]> processInstanceResponse) {
