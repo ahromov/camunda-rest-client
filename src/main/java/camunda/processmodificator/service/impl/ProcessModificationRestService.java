@@ -41,11 +41,15 @@ public class ProcessModificationRestService implements CamundaRestService {
 
         CamundaApiUtils.authenticate(headers, formModel);
 
-        formModel.getTaxIDs().forEach(tax -> {
+        for (String[] tax : formModel.getTaxIDs()) {
             HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax);
 
             ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse =
                     restTemplate.exchange(CamundaApiUtils.getUrl(formModel, CamundaApiRoutes.HISTORY_PROCESS_INSTANCE_RESOURCE_PATH), HttpMethod.POST, processInstanceRequestHttpEntity, CamundaProcessInstanceResponse[].class);
+
+            if (CamundaApiUtils.isProcessInstanceIncidents(formModel, headers, restTemplate, processInstanceResponse)) {
+                break;
+            }
 
             HttpEntity<CamundaActivityInstanceRequest> activityInstanceRequestHttpEntity = CamundaApiUtils.prepareActivityInstanceRequestHttpEntity(headers, processInstanceResponse);
 
@@ -60,7 +64,7 @@ public class ProcessModificationRestService implements CamundaRestService {
                     restTemplate.exchange(url, HttpMethod.POST, camundaProcessInstanceModificationRequestHttpEntity, CamundaProcessInstanceModificationResponse.class);
 
             logResponse(formModel, processInstanceResponse, activityInstanceResponse, camundaProcessInstanceModificationResponseResponse.getStatusCodeValue());
-        });
+        }
     }
 
     private String constructProcessInstanceModificationPath(ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse) {
