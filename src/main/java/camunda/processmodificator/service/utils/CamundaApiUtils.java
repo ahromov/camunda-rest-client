@@ -11,24 +11,23 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
+@Component
 @Slf4j
 public class CamundaApiUtils {
 
-    public static void authenticate(HttpHeaders headers, FormModel formModel) {
+    public void authenticate(HttpHeaders headers, FormModel formModel) {
         if (formModel.getEngineLogin() != null && formModel.getEnginePassword() != null) {
             headers.setBasicAuth(formModel.getEngineLogin(), formModel.getEnginePassword());
         }
     }
 
-    public static String getUrl(FormModel formModel, String path) {
+    public String getUrl(FormModel formModel, String path) {
         return formModel.getServerAddress() + path;
     }
 
@@ -41,21 +40,21 @@ public class CamundaApiUtils {
         return new HttpEntity<>(requestBody, headers);
     }
 
-    public static Boolean isProcessInstanceIncidents(FormModel formModel, HttpHeaders headers, RestTemplate restTemplate, ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse) {
-        String processInstanceId = getObject(processInstanceResponse).getId();
+    public Boolean isProcessInstanceIncidents(FormModel formModel, HttpHeaders headers, RestTemplate restTemplate, CamundaProcessInstanceResponse processInstanceResponse) {
+        String processInstanceId = processInstanceResponse.getId();
         ResponseEntity<CamundaProcessIncidentsCountResponse> processInstanceIncidentsCountResponse =
                 restTemplate.exchange(getUrl(formModel, CamundaApiRoutes.PROCESS_INSTANCE_INCIDENTS_COUNT + processInstanceId), HttpMethod.GET, new HttpEntity(headers), CamundaProcessIncidentsCountResponse.class);
         int incidentsCount = processInstanceIncidentsCountResponse.getBody().getCount().intValue();
         if (incidentsCount > 0) {
-            log.info("Process instance {}:{} has a {} incidents and was be skipped", processInstanceId, getObject(processInstanceResponse).getBusinessKey(), incidentsCount);
+            log.info("Process instance {}:{} has a {} incidents and was be skipped", processInstanceId, processInstanceResponse.getBusinessKey(), incidentsCount);
             return true;
         }
         return false;
     }
 
-    public static HttpEntity<CamundaActivityInstanceRequest> prepareActivityInstanceRequestHttpEntity(HttpHeaders headers, ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse) {
+    public HttpEntity<CamundaActivityInstanceRequest> prepareActivityInstanceRequestHttpEntity(HttpHeaders headers, ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse) {
         List<Map<String, String>> sortingParams = getSortingParams();
-        String id = getObject(processInstanceResponse).getId();
+        String id = getObject(processInstanceResponse).get().getId();
         CamundaActivityInstanceRequest camundaActivityInstanceRequest = CamundaActivityInstanceRequest.builder()
                 .processInstanceId(id)
                 .sorting(sortingParams)
@@ -64,7 +63,7 @@ public class CamundaApiUtils {
         return activityInstanceRequestHttpEntity;
     }
 
-    private static List<Map<String, String>> getSortingParams() {
+    private List<Map<String, String>> getSortingParams() {
         Map<String, String> sortBy = new HashMap<>();
         sortBy.put("sortBy", "endTime");
         Map<String, String> sortOrder = new HashMap<>();
@@ -72,7 +71,11 @@ public class CamundaApiUtils {
         return Arrays.asList(sortBy, sortOrder);
     }
 
-    public static <T> T getObject(ResponseEntity<T[]> processInstanceResponse) {
-        return Arrays.stream(processInstanceResponse.getBody()).collect(Collectors.toList()).get(0);
+    public <T> Optional<T> getObject(ResponseEntity<T[]> processInstanceResponse) {
+        if (processInstanceResponse.getBody().length > 0) {
+            return Optional.of(Arrays.stream(processInstanceResponse.getBody()).collect(Collectors.toList()).get(0));
+        } else {
+            return Optional.empty();
+        }
     }
 }
