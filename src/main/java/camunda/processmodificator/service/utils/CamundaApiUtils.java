@@ -34,7 +34,7 @@ public class CamundaApiUtils {
 
     public static HttpEntity<CamundaProcessInstanceRequest> prepareProcessInstanceRequestHttpEntity(HttpHeaders headers, String[] tax) {
         CamundaProcessInstanceRequest requestBody = CamundaProcessInstanceRequest.builder()
-                .processInstanceBusinessKeyLike(tax[0])
+                .processInstanceBusinessKeyLike("%" + tax[0] + "%")
                 .processDefinitionKey("CreditConveyorSmallBusiness")
                 .finished(false)
                 .build();
