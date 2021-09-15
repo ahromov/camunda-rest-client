@@ -23,7 +23,7 @@ public class ExecutionLocalVariablesRestService implements CamundaRestService {
 
     private RestTemplate restTemplate;
     private CamundaApiUtils camundaApiUtils;
-    private String variableValue;
+    private String executionVariableValue;
 
     public ExecutionLocalVariablesRestService(RestTemplate restTemplate, CamundaApiUtils camundaApiUtils) {
         this.restTemplate = restTemplate;
@@ -62,12 +62,12 @@ public class ExecutionLocalVariablesRestService implements CamundaRestService {
     }
 
     private HttpEntity<CamundaExecutionSetVariableRequest> prepareProcessInstanceModificationRequestHttpEntity(FormModel formModel, HttpHeaders headers, String[] tax) {
-        variableValue = formModel.getVariableValue();
-        if (variableValue == null || variableValue.isEmpty()) {
-            variableValue = tax[1];
+        executionVariableValue = formModel.getVariableValue();
+        if (executionVariableValue == null || executionVariableValue.isEmpty()) {
+            executionVariableValue = tax[1];
         }
         CamundaExecutionSetVariableRequest.Modifications modifications = CamundaExecutionSetVariableRequest.Modifications.builder()
-                .value(variableValue)
+                .value(executionVariableValue)
                 .type(formModel.getVariableType())
                 .build();
         Map<String, CamundaExecutionSetVariableRequest.Modifications> modificationsMap = new HashMap();
@@ -83,7 +83,7 @@ public class ExecutionLocalVariablesRestService implements CamundaRestService {
         if (statusCode == 204) {
             log.info("Variable={}:{} added to process execution={}:{}",
                     formModel.getVariableName(),
-                    variableValue,
+                    executionVariableValue,
                     processInstanceResponse.getId(),
                     processInstanceResponse.getBusinessKey());
         }
