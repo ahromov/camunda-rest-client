@@ -7,7 +7,7 @@ import camunda.processmodificator.views.MainForm;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 
-import java.util.List;
+import java.util.Arrays;
 
 public class ExecutionVariablesForm extends MainForm {
 
@@ -47,7 +47,7 @@ public class ExecutionVariablesForm extends MainForm {
     private Select<String> initVariableType() {
         Select<String> finalActivity = new Select();
         finalActivity.setLabel("Variable type");
-        finalActivity.setItems(List.of("String"));
+        finalActivity.setItems(Arrays.asList("String"));
         return finalActivity;
     }
 }

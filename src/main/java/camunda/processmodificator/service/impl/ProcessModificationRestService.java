@@ -21,6 +21,7 @@ import org.springframework.web.client.RestTemplate;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,40 +31,53 @@ import java.util.Map;
 public class ProcessModificationRestService implements CamundaRestService {
 
     private RestTemplate restTemplate;
+    private CamundaApiUtils camundaApiUtils;
 
-    public ProcessModificationRestService(RestTemplate restTemplate) {
+    public ProcessModificationRestService(RestTemplate restTemplate, CamundaApiUtils camundaApiUtils) throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
         this.restTemplate = restTemplate;
+        this.camundaApiUtils = camundaApiUtils;
     }
 
     public void send(FormModel formModel) {
         HttpHeaders headers = new HttpHeaders();
 
-        CamundaApiUtils.authenticate(headers, formModel);
+        camundaApiUtils.authenticate(headers, formModel);
 
-        formModel.getTaxIDs().forEach(tax -> {
-            HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax, formModel);
+        for (String[] tax : formModel.getTaxIDs()) {
+            HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax);
 
             ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse =
-                    restTemplate.exchange(CamundaApiUtils.getUrl(formModel, CamundaApiRoutes.HISTORY_PROCESS_INSTANCE_RESOURCE_PATH), HttpMethod.POST, processInstanceRequestHttpEntity, CamundaProcessInstanceResponse[].class);
+                    restTemplate.exchange(camundaApiUtils.getUrl(formModel, CamundaApiRoutes.HISTORY_PROCESS_INSTANCE_RESOURCE_PATH), HttpMethod.POST, processInstanceRequestHttpEntity, CamundaProcessInstanceResponse[].class);
 
-            HttpEntity<CamundaActivityInstanceRequest> activityInstanceRequestHttpEntity = CamundaApiUtils.prepareActivityInstanceRequestHttpEntity(headers, processInstanceResponse);
 
-            ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse =
-                    restTemplate.exchange(CamundaApiUtils.getUrl(formModel, CamundaApiRoutes.HISTORY_ACTIVITY_RESOURCE_PATH), HttpMethod.POST, activityInstanceRequestHttpEntity, CamundaActivityInstanceResponse[].class);
+            if (camundaApiUtils.getObject(processInstanceResponse).isPresent()) {
+                CamundaProcessInstanceResponse processInstance = camundaApiUtils.getObject(processInstanceResponse).get();
 
-            HttpEntity<CamundaProcessInstanceModificationRequest> camundaProcessInstanceModificationRequestHttpEntity = prepareProcessInstanceModificationRequestHttpEntity(formModel, headers, activityInstanceResponse);
+                if (camundaApiUtils.isProcessInstanceIncidents(formModel, headers, restTemplate, processInstance)) {
+                    break;
+                }
 
-            String url = CamundaApiUtils.getUrl(formModel, constructProcessInstanceModificationPath(processInstanceResponse));
+                HttpEntity<CamundaActivityInstanceRequest> activityInstanceRequestHttpEntity = camundaApiUtils.prepareActivityInstanceRequestHttpEntity(headers, processInstanceResponse);
 
-            ResponseEntity<CamundaProcessInstanceModificationResponse> camundaProcessInstanceModificationResponseResponse =
-                    restTemplate.exchange(url, HttpMethod.POST, camundaProcessInstanceModificationRequestHttpEntity, CamundaProcessInstanceModificationResponse.class);
+                ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse =
+                        restTemplate.exchange(camundaApiUtils.getUrl(formModel, CamundaApiRoutes.HISTORY_ACTIVITY_RESOURCE_PATH), HttpMethod.POST, activityInstanceRequestHttpEntity, CamundaActivityInstanceResponse[].class);
 
-            logResponse(formModel, processInstanceResponse, activityInstanceResponse, camundaProcessInstanceModificationResponseResponse.getStatusCodeValue());
-        });
+                CamundaActivityInstanceResponse camundaActivityInstance = camundaApiUtils.getObject(activityInstanceResponse).get();
+
+                HttpEntity<CamundaProcessInstanceModificationRequest> camundaProcessInstanceModificationRequestHttpEntity = prepareProcessInstanceModificationRequestHttpEntity(formModel, headers, activityInstanceResponse);
+
+                String url = camundaApiUtils.getUrl(formModel, constructProcessInstanceModificationPath(processInstanceResponse));
+
+                ResponseEntity<CamundaProcessInstanceModificationResponse> camundaProcessInstanceModificationResponseResponse =
+                        restTemplate.exchange(url, HttpMethod.POST, camundaProcessInstanceModificationRequestHttpEntity, CamundaProcessInstanceModificationResponse.class);
+
+                logResponse(formModel, processInstance, camundaActivityInstance, camundaProcessInstanceModificationResponseResponse.getStatusCodeValue());
+            }
+        }
     }
 
     private String constructProcessInstanceModificationPath(ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse) {
-        return CamundaApiRoutes.PROCESS_INSTANCE_RESOURCE_PATH + CamundaApiUtils.getObject(processInstanceResponse).getId() + "/modification";
+        return CamundaApiRoutes.PROCESS_INSTANCE_RESOURCE_PATH + camundaApiUtils.getObject(processInstanceResponse).get().getId() + "/modification";
     }
 
     private HttpEntity<CamundaProcessInstanceModificationRequest> prepareProcessInstanceModificationRequestHttpEntity(FormModel formModel, HttpHeaders headers, ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse) {
@@ -80,20 +94,20 @@ public class ProcessModificationRestService implements CamundaRestService {
     private List<Map<String, String>> getInstruction(FormModel formModel, ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse) {
         Map<String, String> currentActivity = new HashMap<>();
         currentActivity.put("type", "cancel");
-        currentActivity.put("activityId", CamundaApiUtils.getObject(activityInstanceResponse).getActivityId());
+        currentActivity.put("activityId", camundaApiUtils.getObject(activityInstanceResponse).get().getActivityId());
         Map<String, String> finalActivity = new HashMap<>();
         finalActivity.put("type", formModel.getTargetActivityPosition());
         finalActivity.put("activityId", formModel.getTargetActivityID());
-        return List.of(currentActivity, finalActivity);
+        return Arrays.asList(currentActivity, finalActivity);
     }
 
-    private void logResponse(FormModel formModel, ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse, ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse, Integer statusCode) {
+    private void logResponse(FormModel formModel, CamundaProcessInstanceResponse processInstanceResponse, CamundaActivityInstanceResponse activityInstanceResponse, Integer statusCode) {
         if (statusCode == 204) {
             log.info("Token of process={}:{} moved from activity={}:{} on activity id={}",
-                    CamundaApiUtils.getObject(processInstanceResponse).getId(),
-                    CamundaApiUtils.getObject(processInstanceResponse).getBusinessKey(),
-                    CamundaApiUtils.getObject(activityInstanceResponse).getActivityId(),
-                    CamundaApiUtils.getObject(activityInstanceResponse).getActivityName(),
+                    processInstanceResponse.getId(),
+                    processInstanceResponse.getBusinessKey(),
+                    activityInstanceResponse.getActivityId(),
+                    activityInstanceResponse.getActivityName(),
                     formModel.getTargetActivityID());
         }
     }
