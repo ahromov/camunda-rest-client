@@ -7,7 +7,6 @@ import lombok.Data;
 @Builder
 public class CamundaProcessInstanceRequest {
 
-    private String processInstanceBusinessKeyLike;
+    private String businessKeyLike;
     private String processDefinitionKey;
-    private Boolean finished;
 }

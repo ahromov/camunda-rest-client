@@ -7,5 +7,5 @@ public class CamundaProcessInstanceResponse {
 
     private String id;
     private String businessKey;
-    private String processDefinitionId;
+    private String definitionId;
 }
