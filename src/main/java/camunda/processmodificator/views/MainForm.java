@@ -1,7 +1,13 @@
 package camunda.processmodificator.views;
 
-import camunda.processmodificator.model.FormModel;
+import camunda.processmodificator.model.BaseFormModel;
+import camunda.processmodificator.model.MigrateFormModel;
+import camunda.processmodificator.model.ModificateFormModel;
+import camunda.processmodificator.model.VariablesFormModel;
 import camunda.processmodificator.service.CamundaRestService;
+import camunda.processmodificator.views.executionlocalvariable.ExecutionVariablesForm;
+import camunda.processmodificator.views.processmigrate.MigrationForm;
+import camunda.processmodificator.views.processmodificate.ProcessModificationForm;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -9,14 +15,12 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import lombok.AllArgsConstructor;
 
 
-@AllArgsConstructor
-public class MainForm extends FormLayout {
+public abstract class MainForm extends FormLayout {
 
     protected CamundaRestService camundaRestService;
-    protected Binder<FormModel> formBinder = new Binder<>(FormModel.class);
+    protected Binder<BaseFormModel> formBinder = new Binder<>(BaseFormModel.class);
     protected FormLayout formLayout;
     protected Notification notification;
     protected TextField serverAddress;
@@ -25,17 +29,19 @@ public class MainForm extends FormLayout {
     protected TextField login;
     protected TextField password;
     protected Button button;
-    protected FormModel formModel;
+    protected BaseFormModel formModel;
+    final String errorMessage = "Field must not be empty";
 
-    public MainForm(CamundaRestService camundaRestService) {
+    public MainForm(CamundaRestService camundaRestService, BaseFormModel formModel) {
         this.camundaRestService = camundaRestService;
-        formBinder.setBean(new FormModel());
-        initNotification();
+        this.formModel = formModel;
+        formBinder.setBean(this.formModel);
         this.setWidth("400px");
     }
 
     protected void initFormLayout(Component... components) {
         formLayout = new FormLayout();
+        initNotification();
         initServerAddressField();
         initLoginField();
         initPasswordField();
@@ -48,7 +54,6 @@ public class MainForm extends FormLayout {
         initSendButton();
         formLayout.add(button);
         formLayout.setWidth("400px");
-        validateAndBindBean();
         this.add(formLayout);
     }
 
@@ -92,7 +97,7 @@ public class MainForm extends FormLayout {
     protected void initSendButton() {
         button = new Button("Send");
         button.addClickListener(buttonClickEvent -> {
-            FormModel bean = formBinder.getBean();
+            BaseFormModel bean = formBinder.getBean();
             if (formBinder.writeBeanIfValid(bean)) {
                 camundaRestService.send(bean);
                 notification.open();
@@ -100,11 +105,74 @@ public class MainForm extends FormLayout {
         });
     }
 
-    protected void validateAndBindBean() {
-        formBinder.forField(serverAddress).bind(FormModel::getServerAddress, FormModel::setServerAddress);
-        formBinder.forField(processDefinitionKey).bind(FormModel::getProcessDefinitionKey, FormModel::setProcessDefinitionKey);
-        formBinder.forField(login).bind(FormModel::getEngineLogin, FormModel::setEngineLogin);
-        formBinder.forField(password).bind(FormModel::getEnginePassword, FormModel::setEnginePassword);
-        formBinder.forField(taxIds).bind(formModel -> taxIds.getValue(), FormModel::setTaxIDs);
+    protected void validateAndBindBean(MainForm component) {
+        validateCommonsFields();
+        if (component instanceof ExecutionVariablesForm) {
+            validateVariablesFormFields((ExecutionVariablesForm) component);
+            return;
+        }
+        if (component instanceof MigrationForm) {
+            validateMigrationFormFields((MigrationForm) component);
+            return;
+        }
+        if (component instanceof ProcessModificationForm) {
+            validateModificationFormFields((ProcessModificationForm) component);
+            return;
+        }
+    }
+
+    private void validateCommonsFields() {
+        formBinder
+                .forField(serverAddress)
+                .withValidator(address -> address.startsWith("http"), "The address must be starts on \"http://\" or \"https://\"")
+                .withValidator(address -> !address.endsWith("/"), "Remove \"/\" from the end address")
+                .asRequired(errorMessage)
+                .bind(formModel1 -> serverAddress.getValue(), (baseFormModel, s) -> this.formModel.setServerAddress(s));
+        formBinder
+                .forField(login)
+                .bind(formModel1 -> login.getValue(), (baseFormModel, s) -> this.formModel.setEngineLogin(s.trim()));
+        formBinder
+                .forField(password)
+                .bind(formModel1 -> password.getValue(), (baseFormModel, s) -> this.formModel.setEnginePassword(s.trim()));
+        formBinder
+                .forField(processDefinitionKey)
+                .asRequired(errorMessage)
+                .bind(formModel1 -> processDefinitionKey.getValue(), (baseFormModel, s) -> this.formModel.setProcessDefinitionKey(s.trim()));
+        formBinder
+                .forField(taxIds)
+                .asRequired(errorMessage)
+                .bind(formModel1 -> taxIds.getValue(), (baseFormModel, s) -> this.formModel.setTaxIDs(s.trim()));
+    }
+
+    private void validateVariablesFormFields(ExecutionVariablesForm form) {
+        formBinder
+                .forField(form.getVariableName())
+                .asRequired(errorMessage)
+                .bind(formModel1 -> form.getVariableName().getValue(), (baseFormModel, s) -> ((VariablesFormModel) baseFormModel).setVariableName(s.trim()));
+        formBinder
+                .forField(form.getVariableValue())
+                .bind(formModel1 -> form.getVariableValue().getValue(), (baseFormModel, s) -> ((VariablesFormModel) baseFormModel).setVariableValue(s.trim()));
+        formBinder
+                .forField(form.getVariableType())
+                .asRequired(errorMessage)
+                .bind(formModel1 -> form.getVariableType().getValue(), (baseFormModel, s) -> ((VariablesFormModel) baseFormModel).setVariableType(s));
+    }
+
+    private void validateMigrationFormFields(MigrationForm form) {
+        formBinder
+                .forField(form.getTargetProcessDefinition())
+                .asRequired(errorMessage)
+                .bind(formModel1 -> form.getTargetProcessDefinition().getValue(), (baseFormModel, s) -> ((MigrateFormModel) baseFormModel).setTargetProcessDefinitionId(s.trim()));
+    }
+
+    private void validateModificationFormFields(ProcessModificationForm form) {
+        formBinder
+                .forField(form.getPosition())
+                .asRequired()
+                .bind(formModel1 -> form.getPosition().getValue(), (baseFormModel, s) -> ((ModificateFormModel) baseFormModel).setTargetActivityPosition(s));
+        formBinder
+                .forField(form.getTargetActivity())
+                .asRequired(errorMessage)
+                .bind(formModel1 -> form.getTargetActivity().getValue(), (baseFormModel, s) -> ((ModificateFormModel) baseFormModel).setTargetActivityID(s.trim()));
     }
 }

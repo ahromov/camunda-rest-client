@@ -1,33 +1,31 @@
 package camunda.processmodificator.views.executionlocalvariable;
 
 
-import camunda.processmodificator.model.FormModel;
+import camunda.processmodificator.model.VariablesFormModel;
 import camunda.processmodificator.service.CamundaRestService;
 import camunda.processmodificator.views.MainForm;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Arrays;
 
+@Getter
+@Setter
 public class ExecutionVariablesForm extends MainForm {
 
     private TextField variableName;
     private Select<String> variableType;
     private TextField variableValue;
 
-    public ExecutionVariablesForm(CamundaRestService camundaRestService) {
-        super(camundaRestService);
+    public ExecutionVariablesForm(CamundaRestService camundaRestService, VariablesFormModel formModel) {
+        super(camundaRestService, formModel);
         this.variableName = initVariableName();
         this.variableType = initVariableType();
         this.variableValue = initVariableValue();
         super.initFormLayout(variableName, variableValue, variableType);
-        validateAndBind();
-    }
-
-    private void validateAndBind() {
-        super.formBinder.forField(variableName).bind(formModel1 -> variableName.getValue(), FormModel::setVariableName);
-        super.formBinder.forField(variableValue).bind(formModel1 -> variableValue.getValue(), FormModel::setVariableValue);
-        super.formBinder.forField(variableType).bind(formModel1 -> variableType.getValue(), FormModel::setVariableType);
+        super.validateAndBindBean(this);
     }
 
     private TextField initVariableName() {

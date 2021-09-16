@@ -1,23 +1,24 @@
 package camunda.processmodificator.views.processmigrate;
 
-import camunda.processmodificator.model.FormModel;
+import camunda.processmodificator.model.MigrateFormModel;
 import camunda.processmodificator.service.CamundaRestService;
 import camunda.processmodificator.views.MainForm;
 import com.vaadin.flow.component.textfield.TextField;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
 
+@Getter
+@Setter
 public class MigrationForm extends MainForm {
 
     private TextField targetProcessDefinition;
 
-    public MigrationForm(CamundaRestService camundaRestService) {
-        super(camundaRestService);
+    public MigrationForm(CamundaRestService camundaRestService, MigrateFormModel formModel) {
+        super(camundaRestService, formModel);
         this.targetProcessDefinition = initTargetProcessDefinition();
         super.initFormLayout(targetProcessDefinition);
-        validateAndBind();
-    }
-
-    private void validateAndBind() {
-        super.formBinder.forField(targetProcessDefinition).bind(formModel1 -> targetProcessDefinition.getValue(), FormModel::setTargetProcessDefinitionId);
+        super.validateAndBindBean(this);
     }
 
     private TextField initTargetProcessDefinition() {
