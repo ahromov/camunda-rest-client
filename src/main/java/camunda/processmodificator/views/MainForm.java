@@ -1,13 +1,11 @@
 package camunda.processmodificator.views;
 
-import camunda.processmodificator.model.BaseFormModel;
-import camunda.processmodificator.model.MigrateFormModel;
-import camunda.processmodificator.model.ModificateFormModel;
-import camunda.processmodificator.model.VariablesFormModel;
+import camunda.processmodificator.model.*;
 import camunda.processmodificator.service.CamundaRestService;
 import camunda.processmodificator.views.executionlocalvariable.ExecutionVariablesForm;
 import camunda.processmodificator.views.processmigrate.MigrationForm;
 import camunda.processmodificator.views.processmodificate.ProcessModificationForm;
+import camunda.processmodificator.views.processmodificate.ProcessMultipleModificationForm;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -30,7 +28,7 @@ public abstract class MainForm extends FormLayout {
     protected TextField password;
     protected Button button;
     protected BaseFormModel formModel;
-    final String errorMessage = "Field must not be empty";
+    private final String errorMessage = "Field must not be empty";
 
     public MainForm(CamundaRestService camundaRestService, BaseFormModel formModel) {
         this.camundaRestService = camundaRestService;
@@ -119,6 +117,10 @@ public abstract class MainForm extends FormLayout {
             validateModificationFormFields((ProcessModificationForm) component);
             return;
         }
+        if (component instanceof ProcessMultipleModificationForm) {
+            validateMultipleModificationFormFields((ProcessMultipleModificationForm) component);
+            return;
+        }
     }
 
     private void validateCommonsFields() {
@@ -174,5 +176,16 @@ public abstract class MainForm extends FormLayout {
                 .forField(form.getTargetActivity())
                 .asRequired(errorMessage)
                 .bind(formModel1 -> form.getTargetActivity().getValue(), (baseFormModel, s) -> ((ModificateFormModel) baseFormModel).setTargetActivityID(s.trim()));
+    }
+
+    private void validateMultipleModificationFormFields(ProcessMultipleModificationForm form) {
+        formBinder
+                .forField(form.getTargetActivityPosition())
+                .asRequired()
+                .bind(formModel1 -> form.getTargetActivityPosition().getValue(), (baseFormModel, s) -> ((MultipleModificateFormModel) baseFormModel).setTargetActivityPosition(s));
+        formBinder
+                .forField(form.getActivityIDs())
+                .asRequired(errorMessage)
+                .bind(formModel1 -> form.getActivityIDs().getValue(), (baseFormModel, s) -> ((MultipleModificateFormModel) baseFormModel).setActivityIDs(s.trim()));
     }
 }

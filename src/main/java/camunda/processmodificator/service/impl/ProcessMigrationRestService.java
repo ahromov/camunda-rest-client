@@ -42,7 +42,7 @@ public class ProcessMigrationRestService implements CamundaRestService {
 
         camundaApiUtils.authenticate(headers, migrateFormModel);
 
-        List<String[]> taxIDs = camundaApiUtils.setTaxIDs(migrateFormModel.getTaxIDs());
+        List<String[]> taxIDs = camundaApiUtils.parse(migrateFormModel.getTaxIDs());
 
         for (String[] tax : taxIDs) {
             HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax, migrateFormModel);

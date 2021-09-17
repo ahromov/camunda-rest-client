@@ -39,7 +39,7 @@ public class ExecutionLocalVariablesRestService implements CamundaRestService {
 
         camundaApiUtils.authenticate(headers, variablesFormModel);
 
-        List<String[]> taxIDs = camundaApiUtils.setTaxIDs(variablesFormModel.getTaxIDs());
+        List<String[]> taxIDs = camundaApiUtils.parse(variablesFormModel.getTaxIDs());
 
         for (String[] tax : taxIDs) {
             HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax, variablesFormModel);

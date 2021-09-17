@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 public class CamundaApiUtils {
 
     public void authenticate(HttpHeaders headers, BaseFormModel formModel) {
-        if (formModel.getEngineLogin() != null && formModel.getEnginePassword() != null) {
+        if (!formModel.getEngineLogin().isEmpty() && !formModel.getEnginePassword().isEmpty()) {
             headers.setBasicAuth(formModel.getEngineLogin(), formModel.getEnginePassword());
         }
     }
@@ -78,7 +78,7 @@ public class CamundaApiUtils {
         }
     }
 
-    public List<String[]> setTaxIDs(String taxIds) {
+    public List<String[]> parse(String taxIds) {
         List<String[]> listIDs = new LinkedList<>();
         String[] split1 = taxIds.split("\n");
         for (String s : split1) {
