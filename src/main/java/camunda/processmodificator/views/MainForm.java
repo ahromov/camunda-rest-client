@@ -13,6 +13,7 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import org.springframework.web.client.HttpClientErrorException;
 
 
 public abstract class MainForm extends FormLayout {
@@ -56,7 +57,7 @@ public abstract class MainForm extends FormLayout {
     }
 
     protected void initNotification() {
-        notification = new Notification("Done!", 3000, Notification.Position.MIDDLE);
+        notification = new Notification("", 5000, Notification.Position.MIDDLE);
     }
 
     protected void initServerAddressField() {
@@ -97,8 +98,15 @@ public abstract class MainForm extends FormLayout {
         button.addClickListener(buttonClickEvent -> {
             BaseFormModel bean = formBinder.getBean();
             if (formBinder.writeBeanIfValid(bean)) {
-                camundaRestService.send(bean);
-                notification.open();
+                try {
+                    camundaRestService.send(bean);
+                } catch (Exception e) {
+                    if (isAuthorize(e) == false) {
+                        showNotification("Not authorized");
+                        return;
+                    }
+                }
+                showNotification("Done!");
             }
         });
     }
@@ -187,5 +195,20 @@ public abstract class MainForm extends FormLayout {
                 .forField(form.getActivityIDs())
                 .asRequired(errorMessage)
                 .bind(formModel1 -> form.getActivityIDs().getValue(), (baseFormModel, s) -> ((MultipleModificateFormModel) baseFormModel).setActivityIDs(s.trim()));
+    }
+
+    private boolean isAuthorize(Exception e) {
+        if (e instanceof HttpClientErrorException) {
+            int rawStatusCode = ((HttpClientErrorException) e).getRawStatusCode();
+            if (rawStatusCode == 401) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void showNotification(String s) {
+        notification.setText(s);
+        notification.open();
     }
 }
