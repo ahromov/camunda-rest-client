@@ -57,7 +57,7 @@ public abstract class MainForm extends FormLayout {
     }
 
     protected void initNotification() {
-        notification = new Notification("Done!", 3000, Notification.Position.MIDDLE);
+        notification = new Notification("", 5000, Notification.Position.MIDDLE);
     }
 
     protected void initServerAddressField() {
@@ -101,12 +101,12 @@ public abstract class MainForm extends FormLayout {
                 try {
                     camundaRestService.send(bean);
                 } catch (Exception e) {
-                    if (isAuthorize(e)) {
-                        showNotification("Done!");
-                    } else {
+                    if (isAuthorize(e) == false) {
                         showNotification("Not authorized");
+                        return;
                     }
                 }
+                showNotification("Done!");
             }
         });
     }

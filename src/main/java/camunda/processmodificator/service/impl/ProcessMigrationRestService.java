@@ -17,6 +17,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
@@ -47,29 +48,34 @@ public class ProcessMigrationRestService implements CamundaRestService {
         for (String[] tax : taxIDs) {
             HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax, migrateFormModel);
 
-            ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse =
-                    restTemplate.exchange(camundaApiUtils.getUrl(migrateFormModel, CamundaApiRoutes.HISTORY_PROCESS_INSTANCE_RESOURCE_PATH), HttpMethod.POST, processInstanceRequestHttpEntity, CamundaProcessInstanceResponse[].class);
+            try {
+                ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse =
+                        restTemplate.exchange(camundaApiUtils.getUrl(migrateFormModel, CamundaApiRoutes.HISTORY_PROCESS_INSTANCE_RESOURCE_PATH), HttpMethod.POST, processInstanceRequestHttpEntity, CamundaProcessInstanceResponse[].class);
 
-            if (camundaApiUtils.getObject(processInstanceResponse).isPresent()) {
-                CamundaProcessInstanceResponse processInstance = camundaApiUtils.getObject(processInstanceResponse).get();
+                if (camundaApiUtils.getObject(processInstanceResponse).isPresent()) {
+                    CamundaProcessInstanceResponse processInstance = camundaApiUtils.getObject(processInstanceResponse).get();
 
-                if (camundaApiUtils.isProcessInstanceIncidents(migrateFormModel, headers, restTemplate, processInstance)) {
-                    break;
+                    if (camundaApiUtils.isProcessInstanceIncidents(migrateFormModel, headers, restTemplate, processInstance)) {
+                        break;
+                    }
+
+                    HttpEntity<CamundaActivityInstanceRequest> activityInstanceRequestHttpEntity = camundaApiUtils.prepareActivityInstanceRequestHttpEntity(headers, processInstanceResponse);
+
+                    ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse =
+                            restTemplate.exchange(camundaApiUtils.getUrl(migrateFormModel, CamundaApiRoutes.HISTORY_ACTIVITY_RESOURCE_PATH), HttpMethod.POST, activityInstanceRequestHttpEntity, CamundaActivityInstanceResponse[].class);
+
+                    HttpEntity<CamundaProcessMigrationRequest> processInstanceMigrationRequestHttpEntity = prepareProcessInstanceMigrationRequestHttpEntity(headers, migrateFormModel, processInstanceResponse, activityInstanceResponse);
+
+                    ResponseEntity<CamundaProcessInstanceMigrationResponse> processInstanceMigrationResponse =
+                            restTemplate.exchange(camundaApiUtils.getUrl(migrateFormModel, CamundaApiRoutes.PROCESS_MIGRATION_RESOURCE_PATH), HttpMethod.POST, processInstanceMigrationRequestHttpEntity, CamundaProcessInstanceMigrationResponse.class);
+
+                    logResponse(migrateFormModel, processInstanceResponse, processInstanceMigrationResponse.getStatusCodeValue());
                 }
-
-                HttpEntity<CamundaActivityInstanceRequest> activityInstanceRequestHttpEntity = camundaApiUtils.prepareActivityInstanceRequestHttpEntity(headers, processInstanceResponse);
-
-                ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse =
-                        restTemplate.exchange(camundaApiUtils.getUrl(migrateFormModel, CamundaApiRoutes.HISTORY_ACTIVITY_RESOURCE_PATH), HttpMethod.POST, activityInstanceRequestHttpEntity, CamundaActivityInstanceResponse[].class);
-
-                HttpEntity<CamundaProcessMigrationRequest> processInstanceMigrationRequestHttpEntity = prepareProcessInstanceMigrationRequestHttpEntity(headers, migrateFormModel, processInstanceResponse, activityInstanceResponse);
-
-                ResponseEntity<CamundaProcessInstanceMigrationResponse> processInstanceMigrationResponse =
-                        restTemplate.exchange(camundaApiUtils.getUrl(migrateFormModel, CamundaApiRoutes.PROCESS_MIGRATION_RESOURCE_PATH), HttpMethod.POST, processInstanceMigrationRequestHttpEntity, CamundaProcessInstanceMigrationResponse.class);
-
-                logResponse(migrateFormModel, processInstanceResponse, processInstanceMigrationResponse.getStatusCodeValue());
+            } catch (Exception e) {
+                if (e instanceof HttpClientErrorException) {
+                    throw e;
+                }
             }
-
         }
     }
 
