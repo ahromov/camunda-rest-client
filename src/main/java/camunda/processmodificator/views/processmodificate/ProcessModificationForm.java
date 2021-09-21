@@ -1,30 +1,29 @@
 package camunda.processmodificator.views.processmodificate;
 
-import camunda.processmodificator.model.FormModel;
+import camunda.processmodificator.model.ModificateFormModel;
 import camunda.processmodificator.service.CamundaRestService;
 import camunda.processmodificator.views.MainForm;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Arrays;
 
+@Getter
+@Setter
 public class ProcessModificationForm extends MainForm {
 
     private HorizontalLayout targetActivityLayout;
     private Select<String> position = new Select<>();
     private TextField targetActivity = new TextField();
 
-    public ProcessModificationForm(CamundaRestService camundaRestService) {
-        super(camundaRestService);
+    public ProcessModificationForm(CamundaRestService camundaRestService, ModificateFormModel formModel) {
+        super(camundaRestService, formModel);
         this.targetActivityLayout = initFinalActivityLayout();
         super.initFormLayout(targetActivityLayout);
-        validateAndBind();
-    }
-
-    private void validateAndBind() {
-        super.formBinder.forField(position).bind(formModel1 -> position.getValue(), FormModel::setTargetActivityPosition);
-        super.formBinder.forField(targetActivity).bind(formModel1 -> targetActivity.getValue(), FormModel::setTargetActivityID);
+        super.validateAndBindBean(this);
     }
 
     private HorizontalLayout initFinalActivityLayout() {

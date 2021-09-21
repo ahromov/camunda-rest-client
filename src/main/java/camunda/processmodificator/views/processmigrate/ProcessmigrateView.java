@@ -1,5 +1,6 @@
 package camunda.processmodificator.views.processmigrate;
 
+import camunda.processmodificator.model.MigrateFormModel;
 import camunda.processmodificator.service.impl.ProcessMigrationRestService;
 import camunda.processmodificator.views.MainForm;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -14,10 +15,11 @@ import com.vaadin.flow.router.RouteAlias;
 public class ProcessmigrateView extends HorizontalLayout {
 
     private MainForm form;
+    private MigrateFormModel formModel = new MigrateFormModel();
 
     public ProcessmigrateView(ProcessMigrationRestService restService) {
         addClassName("processmigrate-view");
-        this.form = new MigrationForm(restService);
+        this.form = new MigrationForm(restService, this.formModel);
         add(form);
     }
 }

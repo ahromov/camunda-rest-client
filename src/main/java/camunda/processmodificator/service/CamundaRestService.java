@@ -1,8 +1,8 @@
 package camunda.processmodificator.service;
 
-import camunda.processmodificator.model.FormModel;
+import camunda.processmodificator.model.BaseFormModel;
 
 public interface CamundaRestService {
 
-    void send(FormModel formModel);
+    void send(BaseFormModel formModel);
 }

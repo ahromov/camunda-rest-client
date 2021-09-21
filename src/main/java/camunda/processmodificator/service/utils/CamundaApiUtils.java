@@ -4,7 +4,7 @@ import camunda.processmodificator.dto.request.CamundaActivityInstanceRequest;
 import camunda.processmodificator.dto.request.CamundaProcessInstanceRequest;
 import camunda.processmodificator.dto.response.CamundaProcessIncidentsCountResponse;
 import camunda.processmodificator.dto.response.CamundaProcessInstanceResponse;
-import camunda.processmodificator.model.FormModel;
+import camunda.processmodificator.model.BaseFormModel;
 import camunda.processmodificator.service.routes.CamundaApiRoutes;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -21,17 +21,17 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CamundaApiUtils {
 
-    public void authenticate(HttpHeaders headers, FormModel formModel) {
-        if (formModel.getEngineLogin() != null && formModel.getEnginePassword() != null) {
+    public void authenticate(HttpHeaders headers, BaseFormModel formModel) {
+        if (!formModel.getEngineLogin().isEmpty() && !formModel.getEnginePassword().isEmpty()) {
             headers.setBasicAuth(formModel.getEngineLogin(), formModel.getEnginePassword());
         }
     }
 
-    public String getUrl(FormModel formModel, String path) {
+    public String getUrl(BaseFormModel formModel, String path) {
         return formModel.getServerAddress() + path;
     }
 
-    public static HttpEntity<CamundaProcessInstanceRequest> prepareProcessInstanceRequestHttpEntity(HttpHeaders headers, String[] tax, FormModel formModel) {
+    public static HttpEntity<CamundaProcessInstanceRequest> prepareProcessInstanceRequestHttpEntity(HttpHeaders headers, String[] tax, BaseFormModel formModel) {
         CamundaProcessInstanceRequest requestBody = CamundaProcessInstanceRequest.builder()
                 .businessKeyLike("%" + tax[0] + "%")
                 .processDefinitionKey(formModel.getProcessDefinitionKey())
@@ -39,7 +39,7 @@ public class CamundaApiUtils {
         return new HttpEntity<>(requestBody, headers);
     }
 
-    public Boolean isProcessInstanceIncidents(FormModel formModel, HttpHeaders headers, RestTemplate restTemplate, CamundaProcessInstanceResponse processInstanceResponse) {
+    public Boolean isProcessInstanceIncidents(BaseFormModel formModel, HttpHeaders headers, RestTemplate restTemplate, CamundaProcessInstanceResponse processInstanceResponse) {
         String processInstanceId = processInstanceResponse.getId();
         ResponseEntity<CamundaProcessIncidentsCountResponse> processInstanceIncidentsCountResponse =
                 restTemplate.exchange(getUrl(formModel, CamundaApiRoutes.PROCESS_INSTANCE_INCIDENTS_COUNT + processInstanceId), HttpMethod.GET, new HttpEntity(headers), CamundaProcessIncidentsCountResponse.class);
@@ -76,5 +76,15 @@ public class CamundaApiUtils {
         } else {
             return Optional.empty();
         }
+    }
+
+    public List<String[]> parse(String taxIds) {
+        List<String[]> listIDs = new LinkedList<>();
+        String[] split1 = taxIds.split("\n");
+        for (String s : split1) {
+            String[] splitEntry = s.split(">>");
+            listIDs.add(splitEntry);
+        }
+        return listIDs;
     }
 }
