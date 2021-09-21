@@ -45,31 +45,25 @@ public class ExecutionLocalVariablesRestService implements CamundaRestService {
         for (String[] tax : taxIDs) {
             HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax, variablesFormModel);
 
-            try {
-                ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse =
-                        restTemplate.exchange(camundaApiUtils.getUrl(variablesFormModel, CamundaApiRoutes.HISTORY_PROCESS_INSTANCE_RESOURCE_PATH), HttpMethod.POST, processInstanceRequestHttpEntity, CamundaProcessInstanceResponse[].class);
+            ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse =
+                    restTemplate.exchange(camundaApiUtils.getUrl(variablesFormModel, CamundaApiRoutes.HISTORY_PROCESS_INSTANCE_RESOURCE_PATH), HttpMethod.POST, processInstanceRequestHttpEntity, CamundaProcessInstanceResponse[].class);
 
-                if (camundaApiUtils.getObject(processInstanceResponse).isPresent()) {
-                    CamundaProcessInstanceResponse processInstance = camundaApiUtils.getObject(processInstanceResponse).get();
+            if (camundaApiUtils.getObject(processInstanceResponse).isPresent()) {
+                CamundaProcessInstanceResponse processInstance = camundaApiUtils.getObject(processInstanceResponse).get();
 
-                    if (camundaApiUtils.isProcessInstanceIncidents(variablesFormModel, headers, restTemplate, processInstance)) {
-                        break;
-                    }
-
-                    String url = camundaApiUtils.getUrl(variablesFormModel, CamundaApiRoutes.EXECUTION_RESOURCE_PATH) + "/" + camundaApiUtils.getObject(processInstanceResponse).get().getId() + "/localVariables";
-
-                    HttpEntity<CamundaExecutionSetVariableRequest> camundaExecutionSetVariableRequestHttpEntity = prepareProcessInstanceModificationRequestHttpEntity(variablesFormModel, headers, tax);
-                    ResponseEntity<CamundaExecutionLocalVariablesResponse> camundaProcessInstanceModificationResponseResponse =
-                            restTemplate.exchange(url, HttpMethod.POST, camundaExecutionSetVariableRequestHttpEntity, CamundaExecutionLocalVariablesResponse.class);
-
-                    logResponse(variablesFormModel, processInstance, camundaProcessInstanceModificationResponseResponse.getStatusCodeValue());
-                } else {
-                    log.info("Process instance not found by client taxcode: {}", tax[0]);
+                if (camundaApiUtils.isProcessInstanceIncidents(variablesFormModel, headers, restTemplate, processInstance)) {
+                    break;
                 }
-            } catch (Exception e) {
-                if (e instanceof HttpClientErrorException){
-                    throw e;
-                }
+
+                String url = camundaApiUtils.getUrl(variablesFormModel, CamundaApiRoutes.EXECUTION_RESOURCE_PATH) + "/" + camundaApiUtils.getObject(processInstanceResponse).get().getId() + "/localVariables";
+
+                HttpEntity<CamundaExecutionSetVariableRequest> camundaExecutionSetVariableRequestHttpEntity = prepareProcessInstanceModificationRequestHttpEntity(variablesFormModel, headers, tax);
+                ResponseEntity<CamundaExecutionLocalVariablesResponse> camundaProcessInstanceModificationResponseResponse =
+                        restTemplate.exchange(url, HttpMethod.POST, camundaExecutionSetVariableRequestHttpEntity, CamundaExecutionLocalVariablesResponse.class);
+
+                logResponse(variablesFormModel, processInstance, camundaProcessInstanceModificationResponseResponse.getStatusCodeValue());
+            } else {
+                camundaApiUtils.logAndThrowProcessInstanceFindException(tax[0], formModel.getProcessDefinitionKey());
             }
         }
     }

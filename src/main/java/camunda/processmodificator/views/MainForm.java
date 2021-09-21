@@ -98,15 +98,7 @@ public abstract class MainForm extends FormLayout {
         button.addClickListener(buttonClickEvent -> {
             BaseFormModel bean = formBinder.getBean();
             if (formBinder.writeBeanIfValid(bean)) {
-                try {
-                    camundaRestService.send(bean);
-                } catch (Exception e) {
-                    if (isAuthorize(e) == false) {
-                        showNotification("Not authorized");
-                        return;
-                    }
-                }
-                showNotification("Done!");
+                send(bean);
             }
         });
     }
@@ -210,5 +202,18 @@ public abstract class MainForm extends FormLayout {
     private void showNotification(String s) {
         notification.setText(s);
         notification.open();
+    }
+
+    private void send(BaseFormModel bean) {
+        try {
+            camundaRestService.send(bean);
+            showNotification("Done!");
+        } catch (Exception e) {
+            if (isAuthorize(e) == false) {
+                showNotification("Not authenticated: " + e.getMessage());
+            } else {
+                showNotification(e.getMessage());
+            }
+        }
     }
 }
