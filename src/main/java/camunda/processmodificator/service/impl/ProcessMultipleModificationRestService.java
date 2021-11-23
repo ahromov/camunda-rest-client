@@ -122,8 +122,8 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
         }
     }
 
-    private String checkTargetActivity(CamundaProcessInstanceResponse processInstance, List<String[]> activityIDs, CamundaActivityInstanceResponse camundaActivityInstance) {
-        String targetActivity = getTargetActivity(activityIDs, camundaActivityInstance);
+    private String checkTargetActivity(CamundaProcessInstanceResponse processInstance, List<String[]> activityIDs, CamundaActivityInstanceResponse camundaActivityInstanceResponse) {
+        String targetActivity = getTargetActivity(activityIDs, camundaActivityInstanceResponse);
         if (targetActivity == null) {
             log.info("Process instance {}:{} was skipped, beacause his position are on another activity", processInstance.getId(), processInstance.getBusinessKey());
         }
@@ -131,12 +131,13 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
     }
 
     private String getTargetActivity(List<String[]> activityIDs, CamundaActivityInstanceResponse camundaActivityInstance) {
-        String targetActivity = null;
         for (String[] activity : activityIDs) {
-            if (camundaActivityInstance.getActivityId().equals(activity[0])) {
-                targetActivity = activity[1];
+            String activityId = activity[0].trim();
+            String responseActivityId = camundaActivityInstance.getActivityId().trim();
+            if (responseActivityId.equals(activityId)) {
+                return activity[1].trim();
             }
         }
-        return targetActivity;
+        return null;
     }
 }
