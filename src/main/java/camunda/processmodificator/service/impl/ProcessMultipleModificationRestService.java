@@ -49,6 +49,8 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
         List<String[]> taxIDs = camundaApiUtils.parse(modificationFormModel.getTaxIDs());
         List<String[]> activityIDs = camundaApiUtils.parse(modificationFormModel.getActivityIDs());
 
+        Integer counter = 0;
+
         for (String[] tax : taxIDs) {
             HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax, modificationFormModel);
 
@@ -80,10 +82,14 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
                         restTemplate.exchange(url, HttpMethod.POST, camundaProcessInstanceModificationRequestHttpEntity, CamundaProcessInstanceModificationResponse.class);
 
                 logResponse(processInstance, camundaActivityInstance, camundaProcessInstanceModificationResponseResponse.getStatusCodeValue(), targetActivity);
+
+                counter++;
             } else {
                 camundaApiUtils.logAndThrowProcessInstanceFindException(tax[0], formModel.getProcessDefinitionKey());
             }
         }
+
+        log.info(taxIDs.size() + " list items. " + counter + " successfull operations");
     }
 
     private String constructProcessInstanceModificationPath(ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse) {
@@ -97,8 +103,7 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
                 .skipIoMappings(false)
                 .instructions(instructions)
                 .build();
-        HttpEntity<CamundaProcessInstanceModificationRequest> camundaProcessInstanceModificationRequestHttpEntity = new HttpEntity<>(camundaProcessInstanceModificationRequest, headers);
-        return camundaProcessInstanceModificationRequestHttpEntity;
+        return new HttpEntity<>(camundaProcessInstanceModificationRequest, headers);
     }
 
     private List<Map<String, String>> getInstruction(MultipleModificateFormModel formModel, ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse, String targetActivity) {

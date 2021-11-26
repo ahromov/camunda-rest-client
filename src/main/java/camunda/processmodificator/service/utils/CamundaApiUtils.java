@@ -80,7 +80,7 @@ public class CamundaApiUtils {
 
     public List<String[]> parse(String taxIds) {
         List<String[]> listIDs = new LinkedList<>();
-        String[] split1 = taxIds.split("\n");
+        Set<String> split1 = new HashSet<>(Arrays.asList(taxIds.split("\n")));
         for (String s : split1) {
             String[] splitEntry = s.split(">>");
             listIDs.add(splitEntry);
