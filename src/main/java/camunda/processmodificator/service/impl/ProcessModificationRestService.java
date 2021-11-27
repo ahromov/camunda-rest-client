@@ -77,7 +77,7 @@ public class ProcessModificationRestService implements CamundaRestService {
 
                 logResponse(modificationFormModel, processInstance, camundaActivityInstance, camundaProcessInstanceModificationResponseResponse.getStatusCodeValue());
             } else {
-                camundaApiUtils.logAndThrowProcessInstanceFindException(tax[0], formModel.getProcessDefinitionKey());
+                camundaApiUtils.logOperationException(tax[0], formModel.getProcessDefinitionKey());
             }
         }
     }

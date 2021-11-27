@@ -88,7 +88,7 @@ public class CamundaApiUtils {
         return listIDs;
     }
 
-    public void logAndThrowProcessInstanceFindException(String tax, String processDefinitionKey) {
+    public void logOperationException(String tax, String processDefinitionKey) {
         String message = "Process instance not found by client taxcode(buisseness key)";
         log.info(message + ": {} on process {}", tax, processDefinitionKey);
     }

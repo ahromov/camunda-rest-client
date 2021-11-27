@@ -69,7 +69,7 @@ public class ProcessMigrationRestService implements CamundaRestService {
 
                 logResponse(migrateFormModel, processInstanceResponse, processInstanceMigrationResponse.getStatusCodeValue());
             } else {
-                camundaApiUtils.logAndThrowProcessInstanceFindException(tax[0], formModel.getProcessDefinitionKey());
+                camundaApiUtils.logOperationException(tax[0], formModel.getProcessDefinitionKey());
             }
         }
     }

@@ -46,12 +46,12 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
 
         camundaApiUtils.authenticate(headers, modificationFormModel);
 
-        List<String[]> taxIDs = camundaApiUtils.parse(modificationFormModel.getTaxIDs());
-        List<String[]> activityIDs = camundaApiUtils.parse(modificationFormModel.getActivityIDs());
+        List<String[]> taxItems = camundaApiUtils.parse(modificationFormModel.getTaxIDs());
+        List<String[]> activityItems = camundaApiUtils.parse(modificationFormModel.getActivityIDs());
 
         Integer counter = 0;
 
-        for (String[] tax : taxIDs) {
+        for (String[] tax : taxItems) {
             HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax, modificationFormModel);
 
             ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse =
@@ -71,7 +71,7 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
 
                 CamundaActivityInstanceResponse camundaActivityInstance = camundaApiUtils.getObject(activityInstanceResponse).get();
 
-                String targetActivity = checkTargetActivity(processInstance, activityIDs, camundaActivityInstance);
+                String targetActivity = checkTargetActivity(processInstance, activityItems, camundaActivityInstance);
                 if (targetActivity == null) continue;
 
                 HttpEntity<CamundaProcessInstanceModificationRequest> camundaProcessInstanceModificationRequestHttpEntity = prepareProcessInstanceModificationRequestHttpEntity(modificationFormModel, headers, activityInstanceResponse, targetActivity);
@@ -85,11 +85,11 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
 
                 counter++;
             } else {
-                camundaApiUtils.logAndThrowProcessInstanceFindException(tax[0], formModel.getProcessDefinitionKey());
+                camundaApiUtils.logOperationException(tax[0], formModel.getProcessDefinitionKey());
             }
         }
 
-        log.info(taxIDs.size() + " list items. " + counter + " successfull operations");
+        log.info(taxItems.size() + " list items. " + counter + " successfull operations");
     }
 
     private String constructProcessInstanceModificationPath(ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse) {

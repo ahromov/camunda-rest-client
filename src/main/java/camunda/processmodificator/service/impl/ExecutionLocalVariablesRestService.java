@@ -13,7 +13,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
@@ -63,7 +62,7 @@ public class ExecutionLocalVariablesRestService implements CamundaRestService {
 
                 logResponse(variablesFormModel, processInstance, camundaProcessInstanceModificationResponseResponse.getStatusCodeValue());
             } else {
-                camundaApiUtils.logAndThrowProcessInstanceFindException(tax[0], formModel.getProcessDefinitionKey());
+                camundaApiUtils.logOperationException(tax[0], formModel.getProcessDefinitionKey());
             }
         }
     }
