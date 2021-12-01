@@ -27,8 +27,8 @@ import java.util.List;
 @Slf4j
 public class ProcessMigrationRestService implements CamundaRestService {
 
-    private RestTemplate restTemplate;
-    private CamundaApiUtils camundaApiUtils;
+    private final RestTemplate restTemplate;
+    private final CamundaApiUtils camundaApiUtils;
 
     public ProcessMigrationRestService(RestTemplate restTemplate, CamundaApiUtils camundaApiUtils) {
         this.restTemplate = restTemplate;

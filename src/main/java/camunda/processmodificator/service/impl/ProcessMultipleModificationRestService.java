@@ -31,10 +31,10 @@ import java.util.Map;
 @Slf4j
 public class ProcessMultipleModificationRestService implements CamundaRestService {
 
-    private RestTemplate restTemplate;
-    private CamundaApiUtils camundaApiUtils;
+    private final RestTemplate restTemplate;
+    private final CamundaApiUtils camundaApiUtils;
 
-    public ProcessMultipleModificationRestService(RestTemplate restTemplate, CamundaApiUtils camundaApiUtils) throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
+    public ProcessMultipleModificationRestService(RestTemplate restTemplate, CamundaApiUtils camundaApiUtils) {
         this.restTemplate = restTemplate;
         this.camundaApiUtils = camundaApiUtils;
     }

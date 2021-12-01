@@ -31,8 +31,8 @@ import java.util.Map;
 @Slf4j
 public class ProcessModificationRestService implements CamundaRestService {
 
-    private RestTemplate restTemplate;
-    private CamundaApiUtils camundaApiUtils;
+    private final RestTemplate restTemplate;
+    private final CamundaApiUtils camundaApiUtils;
 
     public ProcessModificationRestService(RestTemplate restTemplate, CamundaApiUtils camundaApiUtils) throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
         this.restTemplate = restTemplate;

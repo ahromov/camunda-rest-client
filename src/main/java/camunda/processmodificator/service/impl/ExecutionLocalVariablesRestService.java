@@ -23,8 +23,8 @@ import java.util.Map;
 @Slf4j
 public class ExecutionLocalVariablesRestService implements CamundaRestService {
 
-    private RestTemplate restTemplate;
-    private CamundaApiUtils camundaApiUtils;
+    private final RestTemplate restTemplate;
+    private final CamundaApiUtils camundaApiUtils;
     private String executionVariableValue;
 
     public ExecutionLocalVariablesRestService(RestTemplate restTemplate, CamundaApiUtils camundaApiUtils) {
