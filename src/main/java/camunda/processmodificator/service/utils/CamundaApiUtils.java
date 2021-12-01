@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CamundaApiUtils {
 
-
     public void authenticate(HttpHeaders headers, BaseFormModel formModel) {
         if (!formModel.getEngineLogin().isEmpty() && !formModel.getEnginePassword().isEmpty()) {
             headers.setBasicAuth(formModel.getEngineLogin(), formModel.getEnginePassword());
@@ -49,16 +48,16 @@ public class CamundaApiUtils {
         if (processInstanceIncidentsCountResponse.hasBody()) {
             int incidentsCount = body.getCount().intValue();
             if (incidentsCount > 0) {
-                log.info("Process instance {}:{} has a {} incidents and was be skipped", processInstanceId, processInstanceResponse.getBusinessKey(), incidentsCount);
+                log.error("Process instance {}:{} has a {} incidents and was be skipped", processInstanceId, processInstanceResponse.getBusinessKey(), incidentsCount);
                 return true;
             }
         }
         return false;
     }
 
-    public HttpEntity<CamundaActivityInstanceRequest> prepareActivityInstanceRequestHttpEntity(HttpHeaders headers, ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse) {
+    public HttpEntity<CamundaActivityInstanceRequest> prepareActivityInstanceRequestHttpEntity(HttpHeaders headers, CamundaProcessInstanceResponse processInstanceResponse) {
         List<Map<String, String>> sortingParams = getSortingParams();
-        String id = getObject(processInstanceResponse).get().getId();
+        String id = processInstanceResponse.getId();
         CamundaActivityInstanceRequest camundaActivityInstanceRequest = CamundaActivityInstanceRequest.builder()
                 .processInstanceId(id)
                 .sorting(sortingParams)
@@ -80,6 +79,14 @@ public class CamundaApiUtils {
             return Optional.of(Arrays.stream(processInstanceResponse.getBody()).collect(Collectors.toList()).get(0));
         } else {
             return Optional.empty();
+        }
+    }
+
+    public <T> List<T> getObjects(ResponseEntity<T[]> processInstanceResponse) {
+        if (processInstanceResponse.hasBody()) {
+            return Arrays.stream(processInstanceResponse.getBody()).collect(Collectors.toList());
+        } else {
+            return null;
         }
     }
 

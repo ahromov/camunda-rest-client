@@ -22,12 +22,10 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Slf4j
 public class ProcessMigrationRestService implements CamundaRestService {
-
 
 
     private final RestTemplate restTemplate;
@@ -43,61 +41,64 @@ public class ProcessMigrationRestService implements CamundaRestService {
 
         camundaApiUtils.authenticate(headers, formModel);
 
-        List<String[]> taxIDs = camundaApiUtils.parse(Constants.IPNS);
-
-        Integer counter = 0;
-
-        log.info(taxIDs.size() + " list items. Start applications migration");
+        List<String[]> taxIDs = camundaApiUtils.parse(Constants.ipns);
 
         for (String[] tax : taxIDs) {
+            int counter = 0;
+
             HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax);
 
             ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse =
                     restTemplate.exchange(camundaApiUtils.getUrl(formModel, CamundaApiRoutes.PROCESS_INSTANCE_RESOURCE_PATH), HttpMethod.POST, processInstanceRequestHttpEntity, CamundaProcessInstanceResponse[].class);
 
-            Optional<CamundaProcessInstanceResponse> camundaProcessInstanceResponse = camundaApiUtils.getObject(processInstanceResponse);
-            if (camundaProcessInstanceResponse.isPresent()) {
-                CamundaProcessInstanceResponse processInstance = camundaProcessInstanceResponse.get();
+            List<CamundaProcessInstanceResponse> camundaProcessInstanceResponse = camundaApiUtils.getObjects(processInstanceResponse);
+            if (!camundaProcessInstanceResponse.isEmpty()) {
+                log.info("Contragent ID: " + tax[0] + ". His an applications = " + camundaProcessInstanceResponse.size() + ". Attempt migration the all applications!");
 
-                if (camundaApiUtils.isProcessInstanceIncidents(formModel, headers, restTemplate, processInstance)) {
-                    break;
+                for (CamundaProcessInstanceResponse processInstance : camundaProcessInstanceResponse) {
+                    try {
+                        if (camundaApiUtils.isProcessInstanceIncidents(formModel, headers, restTemplate, processInstance)) {
+                            break;
+                        }
+
+                        HttpEntity<CamundaActivityInstanceRequest> activityInstanceRequestHttpEntity = camundaApiUtils.prepareActivityInstanceRequestHttpEntity(headers, processInstance);
+
+                        ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse =
+                                restTemplate.exchange(camundaApiUtils.getUrl(formModel, CamundaApiRoutes.HISTORY_ACTIVITY_RESOURCE_PATH), HttpMethod.POST, activityInstanceRequestHttpEntity, CamundaActivityInstanceResponse[].class);
+
+                        HttpEntity<CamundaProcessMigrationRequest> processInstanceMigrationRequestHttpEntity = prepareProcessInstanceMigrationRequestHttpEntity(headers, processInstance, activityInstanceResponse);
+
+                        ResponseEntity<CamundaProcessInstanceMigrationResponse> processInstanceMigrationResponse =
+                                restTemplate.exchange(camundaApiUtils.getUrl(formModel, CamundaApiRoutes.PROCESS_MIGRATION_RESOURCE_PATH), HttpMethod.POST, processInstanceMigrationRequestHttpEntity, CamundaProcessInstanceMigrationResponse.class);
+
+                        logResponse(processInstanceResponse, processInstanceMigrationResponse.getStatusCodeValue());
+
+                        counter++;
+                    } catch (Exception e) {
+                        log.error(e.getMessage());
+                    }
                 }
 
-                HttpEntity<CamundaActivityInstanceRequest> activityInstanceRequestHttpEntity = camundaApiUtils.prepareActivityInstanceRequestHttpEntity(headers, processInstanceResponse);
-
-                ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse =
-                        restTemplate.exchange(camundaApiUtils.getUrl(formModel, CamundaApiRoutes.HISTORY_ACTIVITY_RESOURCE_PATH), HttpMethod.POST, activityInstanceRequestHttpEntity, CamundaActivityInstanceResponse[].class);
-
-                HttpEntity<CamundaProcessMigrationRequest> processInstanceMigrationRequestHttpEntity = prepareProcessInstanceMigrationRequestHttpEntity(headers, processInstanceResponse, activityInstanceResponse);
-
-                ResponseEntity<CamundaProcessInstanceMigrationResponse> processInstanceMigrationResponse =
-                        restTemplate.exchange(camundaApiUtils.getUrl(formModel, CamundaApiRoutes.PROCESS_MIGRATION_RESOURCE_PATH), HttpMethod.POST, processInstanceMigrationRequestHttpEntity, CamundaProcessInstanceMigrationResponse.class);
-
-                logResponse(processInstanceResponse, processInstanceMigrationResponse.getStatusCodeValue());
-
-                counter++;
+                log.info("Applications migration is done!. " + counter + " successfull operations");
             } else {
                 camundaApiUtils.logOperationException(tax[0], Constants.PROCESS_DEFINITION_KEY);
             }
         }
-
-        log.info("Done applications migration. " + counter + " successfull operations");
     }
 
-    public HttpEntity<CamundaProcessMigrationRequest> prepareProcessInstanceMigrationRequestHttpEntity(HttpHeaders headers, ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse, ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse) {
-        CamundaProcessInstanceResponse camundaProcessInstanceResponse = camundaApiUtils.getObject(processInstanceResponse).get();
-        String processInstanceId = camundaProcessInstanceResponse.getId();
-        String processDefinitionId = camundaProcessInstanceResponse.getDefinitionId();
+    public HttpEntity<CamundaProcessMigrationRequest> prepareProcessInstanceMigrationRequestHttpEntity(HttpHeaders headers, CamundaProcessInstanceResponse processInstanceResponse, ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse) {
+        String processInstanceId = processInstanceResponse.getId();
+        String currentProcessDefinitionId = processInstanceResponse.getDefinitionId();
         CamundaProcessMigrationRequest.Instructions instructions = getInstructions(activityInstanceResponse);
         CamundaProcessMigrationRequest.MigrationPlan migrationPlan = CamundaProcessMigrationRequest.MigrationPlan.builder()
-                .sourceProcessDefinitionId(processDefinitionId)
-                .targetProcessDefinitionId(Constants.TARGET_PROCESS_DEFINITION_ID)
+                .sourceProcessDefinitionId(currentProcessDefinitionId)
+                .targetProcessDefinitionId(Constants.targetProcessDefinitionId)
                 .instructions(Arrays.asList(instructions))
                 .build();
         CamundaProcessMigrationRequest camundaProcessInstanceMigrationRequest = CamundaProcessMigrationRequest.builder()
                 .migrationPlan(migrationPlan)
                 .processInstanceIds(Arrays.asList(processInstanceId))
-                .skipCustomListeners(true)
+                .skipCustomListeners(false)
                 .build();
         HttpEntity<CamundaProcessMigrationRequest> activityInstanceRequestHttpEntity = new HttpEntity<>(camundaProcessInstanceMigrationRequest, headers);
         return activityInstanceRequestHttpEntity;
@@ -120,11 +121,11 @@ public class ProcessMigrationRestService implements CamundaRestService {
     private void logResponse(ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse, Integer statusCode) {
         if (statusCode == 204) {
             CamundaProcessInstanceResponse camundaProcessInstanceResponse = camundaApiUtils.getObject(processInstanceResponse).get();
-            log.info("Process instance={}:{} moved from definition={} to definition={}",
+            log.debug("Process instance={}:{} moved from definition={} to definition={}",
                     camundaProcessInstanceResponse.getId(),
                     camundaProcessInstanceResponse.getBusinessKey(),
                     camundaProcessInstanceResponse.getDefinitionId(),
-                    "ce473fa-5150-11ec-9ca9-0050569796a7");
+                    Constants.targetProcessDefinitionId);
         }
     }
 }
