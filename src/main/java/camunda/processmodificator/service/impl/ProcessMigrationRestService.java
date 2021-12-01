@@ -22,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -49,13 +50,14 @@ public class ProcessMigrationRestService implements CamundaRestService {
         log.info(taxIDs.size() + " list items. Start applications migration");
 
         for (String[] tax : taxIDs) {
-            HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax, formModel);
+            HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax);
 
             ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse =
-                    restTemplate.exchange(camundaApiUtils.getUrl(formModel, CamundaApiRoutes.HISTORY_PROCESS_INSTANCE_RESOURCE_PATH), HttpMethod.POST, processInstanceRequestHttpEntity, CamundaProcessInstanceResponse[].class);
+                    restTemplate.exchange(camundaApiUtils.getUrl(formModel, CamundaApiRoutes.PROCESS_INSTANCE_RESOURCE_PATH), HttpMethod.POST, processInstanceRequestHttpEntity, CamundaProcessInstanceResponse[].class);
 
-            if (camundaApiUtils.getObject(processInstanceResponse).isPresent()) {
-                CamundaProcessInstanceResponse processInstance = camundaApiUtils.getObject(processInstanceResponse).get();
+            Optional<CamundaProcessInstanceResponse> camundaProcessInstanceResponse = camundaApiUtils.getObject(processInstanceResponse);
+            if (camundaProcessInstanceResponse.isPresent()) {
+                CamundaProcessInstanceResponse processInstance = camundaProcessInstanceResponse.get();
 
                 if (camundaApiUtils.isProcessInstanceIncidents(formModel, headers, restTemplate, processInstance)) {
                     break;

@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 public class CamundaApiUtils {
 
 
-
     public void authenticate(HttpHeaders headers, BaseFormModel formModel) {
         if (!formModel.getEngineLogin().isEmpty() && !formModel.getEnginePassword().isEmpty()) {
             headers.setBasicAuth(formModel.getEngineLogin(), formModel.getEnginePassword());
@@ -34,7 +33,7 @@ public class CamundaApiUtils {
         return formModel.getServerAddress() + path;
     }
 
-    public static HttpEntity<CamundaProcessInstanceRequest> prepareProcessInstanceRequestHttpEntity(HttpHeaders headers, String[] tax, BaseFormModel formModel) {
+    public static HttpEntity<CamundaProcessInstanceRequest> prepareProcessInstanceRequestHttpEntity(HttpHeaders headers, String[] tax) {
         CamundaProcessInstanceRequest requestBody = CamundaProcessInstanceRequest.builder()
                 .businessKeyLike("%" + tax[0] + "%")
                 .processDefinitionKey(Constants.PROCESS_DEFINITION_KEY)
@@ -46,10 +45,13 @@ public class CamundaApiUtils {
         String processInstanceId = processInstanceResponse.getId();
         ResponseEntity<CamundaProcessIncidentsCountResponse> processInstanceIncidentsCountResponse =
                 restTemplate.exchange(getUrl(formModel, CamundaApiRoutes.PROCESS_INSTANCE_INCIDENTS_COUNT + processInstanceId), HttpMethod.GET, new HttpEntity(headers), CamundaProcessIncidentsCountResponse.class);
-        int incidentsCount = processInstanceIncidentsCountResponse.getBody().getCount().intValue();
-        if (incidentsCount > 0) {
-            log.info("Process instance {}:{} has a {} incidents and was be skipped", processInstanceId, processInstanceResponse.getBusinessKey(), incidentsCount);
-            return true;
+        CamundaProcessIncidentsCountResponse body = processInstanceIncidentsCountResponse.getBody();
+        if (processInstanceIncidentsCountResponse.hasBody()) {
+            int incidentsCount = body.getCount().intValue();
+            if (incidentsCount > 0) {
+                log.info("Process instance {}:{} has a {} incidents and was be skipped", processInstanceId, processInstanceResponse.getBusinessKey(), incidentsCount);
+                return true;
+            }
         }
         return false;
     }

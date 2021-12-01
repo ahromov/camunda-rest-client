@@ -29,7 +29,6 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
     private final CamundaApiUtils camundaApiUtils;
 
 
-
     public ProcessMultipleModificationRestService(RestTemplate restTemplate, CamundaApiUtils camundaApiUtils) {
         this.restTemplate = restTemplate;
         this.camundaApiUtils = camundaApiUtils;
@@ -48,13 +47,14 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
         log.info(taxItems.size() + " list items. Start applications moving");
 
         for (String[] tax : taxItems) {
-            HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax, formModel);
+            HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax);
 
             ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse =
-                    restTemplate.exchange(camundaApiUtils.getUrl(formModel, CamundaApiRoutes.HISTORY_PROCESS_INSTANCE_RESOURCE_PATH), HttpMethod.POST, processInstanceRequestHttpEntity, CamundaProcessInstanceResponse[].class);
+                    restTemplate.exchange(camundaApiUtils.getUrl(formModel, CamundaApiRoutes.PROCESS_INSTANCE_RESOURCE_PATH), HttpMethod.POST, processInstanceRequestHttpEntity, CamundaProcessInstanceResponse[].class);
 
-            if (camundaApiUtils.getObject(processInstanceResponse).isPresent()) {
-                CamundaProcessInstanceResponse processInstance = camundaApiUtils.getObject(processInstanceResponse).get();
+            Optional<CamundaProcessInstanceResponse> camundaProcessInstanceResponse = camundaApiUtils.getObject(processInstanceResponse);
+            if (camundaProcessInstanceResponse.isPresent()) {
+                CamundaProcessInstanceResponse processInstance = camundaProcessInstanceResponse.get();
 
                 if (camundaApiUtils.isProcessInstanceIncidents(formModel, headers, restTemplate, processInstance)) {
                     continue;
@@ -65,21 +65,25 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
                 ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse =
                         restTemplate.exchange(camundaApiUtils.getUrl(formModel, CamundaApiRoutes.HISTORY_ACTIVITY_RESOURCE_PATH), HttpMethod.POST, activityInstanceRequestHttpEntity, CamundaActivityInstanceResponse[].class);
 
-                CamundaActivityInstanceResponse camundaActivityInstance = camundaApiUtils.getObject(activityInstanceResponse).get();
+                Optional<CamundaActivityInstanceResponse> camundaActivityInstanceResponse = camundaApiUtils.getObject(activityInstanceResponse);
+                if (camundaActivityInstanceResponse.isPresent()) {
+                    CamundaActivityInstanceResponse camundaActivityInstance = camundaActivityInstanceResponse.get();
 
-                String targetActivity = checkTargetActivity(processInstance, activityItems, camundaActivityInstance);
-                if (targetActivity == null) continue;
+                    String targetActivity = checkTargetActivity(processInstance, activityItems, camundaActivityInstance);
+                    if (targetActivity == null) continue;
 
-                HttpEntity<CamundaProcessInstanceModificationRequest> camundaProcessInstanceModificationRequestHttpEntity = prepareProcessInstanceModificationRequestHttpEntity(formModel, headers, activityInstanceResponse, targetActivity);
+                    HttpEntity<CamundaProcessInstanceModificationRequest> camundaProcessInstanceModificationRequestHttpEntity = prepareProcessInstanceModificationRequestHttpEntity(formModel, headers, activityInstanceResponse, targetActivity);
 
-                String url = camundaApiUtils.getUrl(formModel, constructProcessInstanceModificationPath(processInstanceResponse));
+                    String path = constructProcessInstanceModificationPath(processInstanceResponse);
+                    String url = camundaApiUtils.getUrl(formModel, path);
 
-                ResponseEntity<CamundaProcessInstanceModificationResponse> camundaProcessInstanceModificationResponseResponse =
-                        restTemplate.exchange(url, HttpMethod.POST, camundaProcessInstanceModificationRequestHttpEntity, CamundaProcessInstanceModificationResponse.class);
+                    ResponseEntity<CamundaProcessInstanceModificationResponse> camundaProcessInstanceModificationResponseResponse =
+                            restTemplate.exchange(url, HttpMethod.POST, camundaProcessInstanceModificationRequestHttpEntity, CamundaProcessInstanceModificationResponse.class);
 
-                logResponse(processInstance, camundaActivityInstance, camundaProcessInstanceModificationResponseResponse.getStatusCodeValue(), targetActivity);
+                    logResponse(processInstance, camundaActivityInstance, camundaProcessInstanceModificationResponseResponse.getStatusCodeValue(), targetActivity);
 
-                counter++;
+                    counter++;
+                }
             } else {
                 camundaApiUtils.logOperationException(tax[0], Constants.PROCESS_DEFINITION_KEY);
             }
@@ -89,23 +93,35 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
     }
 
     private String constructProcessInstanceModificationPath(ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse) {
-        return CamundaApiRoutes.PROCESS_INSTANCE_RESOURCE_PATH + camundaApiUtils.getObject(processInstanceResponse).get().getId() + "/modification";
+        Optional<CamundaProcessInstanceResponse> camundaProcessInstanceResponse = camundaApiUtils.getObject(processInstanceResponse);
+        if (camundaProcessInstanceResponse.isPresent())
+            return CamundaApiRoutes.PROCESS_INSTANCE_RESOURCE_PATH + camundaProcessInstanceResponse.get().getId() + "/modification";
+        return null;
     }
 
     private HttpEntity<CamundaProcessInstanceModificationRequest> prepareProcessInstanceModificationRequestHttpEntity(BaseFormModel formModel, HttpHeaders headers, ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse, String targetActivity) {
-        List<Map<String, String>> instructions = getInstruction(formModel, activityInstanceResponse, targetActivity);
-        CamundaProcessInstanceModificationRequest camundaProcessInstanceModificationRequest = CamundaProcessInstanceModificationRequest.builder()
-                .skipCustomListeners(false)
-                .skipIoMappings(false)
-                .instructions(instructions)
-                .build();
-        return new HttpEntity<>(camundaProcessInstanceModificationRequest, headers);
+        List<Map<String, String>> instructions = getInstruction(activityInstanceResponse, targetActivity);
+        if (instructions != null) {
+            CamundaProcessInstanceModificationRequest camundaProcessInstanceModificationRequest = CamundaProcessInstanceModificationRequest.builder()
+                    .skipCustomListeners(false)
+                    .skipIoMappings(false)
+                    .instructions(instructions)
+                    .build();
+            return new HttpEntity<>(camundaProcessInstanceModificationRequest, headers);
+        }
+        return null;
     }
 
-    private List<Map<String, String>> getInstruction(BaseFormModel formModel, ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse, String targetActivity) {
+    private List<Map<String, String>> getInstruction(ResponseEntity<CamundaActivityInstanceResponse[]> activityInstanceResponse, String targetActivity) {
         Map<String, String> currentActivity = new HashMap<>();
         currentActivity.put("type", "cancel");
-        currentActivity.put("activityId", camundaApiUtils.getObject(activityInstanceResponse).get().getActivityId());
+        if (activityInstanceResponse.hasBody()) {
+            Optional<CamundaActivityInstanceResponse> camundaActivityInstanceResponse = camundaApiUtils.getObject(activityInstanceResponse);
+            currentActivity.put("activityId", camundaActivityInstanceResponse.get().getActivityId());
+        } else {
+            log.warn("Can`t to get current activity ID");
+            return null;
+        }
         Map<String, String> finalActivity = new HashMap<>();
         finalActivity.put("type", "startBeforeActivity");
         finalActivity.put("activityId", targetActivity);
