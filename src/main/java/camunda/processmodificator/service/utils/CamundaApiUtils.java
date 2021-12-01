@@ -1,5 +1,6 @@
 package camunda.processmodificator.service.utils;
 
+import camunda.processmodificator.configuration.Constants;
 import camunda.processmodificator.dto.request.CamundaActivityInstanceRequest;
 import camunda.processmodificator.dto.request.CamundaProcessInstanceRequest;
 import camunda.processmodificator.dto.response.CamundaProcessIncidentsCountResponse;
@@ -21,6 +22,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CamundaApiUtils {
 
+
+
     public void authenticate(HttpHeaders headers, BaseFormModel formModel) {
         if (!formModel.getEngineLogin().isEmpty() && !formModel.getEnginePassword().isEmpty()) {
             headers.setBasicAuth(formModel.getEngineLogin(), formModel.getEnginePassword());
@@ -34,7 +37,7 @@ public class CamundaApiUtils {
     public static HttpEntity<CamundaProcessInstanceRequest> prepareProcessInstanceRequestHttpEntity(HttpHeaders headers, String[] tax, BaseFormModel formModel) {
         CamundaProcessInstanceRequest requestBody = CamundaProcessInstanceRequest.builder()
                 .businessKeyLike("%" + tax[0] + "%")
-                .processDefinitionKey(formModel.getProcessDefinitionKey())
+                .processDefinitionKey(Constants.PROCESS_DEFINITION_KEY)
                 .build();
         return new HttpEntity<>(requestBody, headers);
     }

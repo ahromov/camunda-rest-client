@@ -1,5 +1,6 @@
 package camunda.processmodificator.service.impl;
 
+import camunda.processmodificator.configuration.Constants;
 import camunda.processmodificator.dto.request.CamundaActivityInstanceRequest;
 import camunda.processmodificator.dto.request.CamundaProcessInstanceModificationRequest;
 import camunda.processmodificator.dto.request.CamundaProcessInstanceRequest;
@@ -27,16 +28,7 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
     private final RestTemplate restTemplate;
     private final CamundaApiUtils camundaApiUtils;
 
-    private static final String ACTIVITIES =
-            "Activity_0mlyk6z >> Event_003npo3\n" +
-            "Activity_0c6jrc8 >> Event_1a8s1ar\n" +
-            "Activity_0g903er >> Event_0hv27uu\n" +
-            "Activity_03a59ad >> Event_1d4zto4\n" +
-            "Activity_0fm51ny >> Event_1wd3g54\n" +
-            "Activity_0t8sjn3 >> Event_1477h6a\n" +
-            "Activity_19humvc >> Event_03hwk4z\n" +
-            "Activity_0492taw >> Event_12yfbrx\n" +
-            "Activity_1v8zk24 >> Event_0690fv8";
+
 
     public ProcessMultipleModificationRestService(RestTemplate restTemplate, CamundaApiUtils camundaApiUtils) {
         this.restTemplate = restTemplate;
@@ -44,16 +36,16 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
     }
 
     public void send(BaseFormModel formModel) {
-//        MultipleModificateFormModel formModel = (MultipleModificateFormModel) formModel;
-
         HttpHeaders headers = new HttpHeaders();
 
         camundaApiUtils.authenticate(headers, formModel);
 
-        List<String[]> taxItems = camundaApiUtils.parse(formModel.getTaxIDs());
-        List<String[]> activityItems = camundaApiUtils.parse(this.ACTIVITIES);
+        List<String[]> taxItems = camundaApiUtils.parse(Constants.IPNS);
+        List<String[]> activityItems = camundaApiUtils.parse(Constants.ACTIVITIES);
 
         Integer counter = 0;
+
+        log.info(taxItems.size() + " list items. Start applications moving");
 
         for (String[] tax : taxItems) {
             HttpEntity<CamundaProcessInstanceRequest> processInstanceRequestHttpEntity = CamundaApiUtils.prepareProcessInstanceRequestHttpEntity(headers, tax, formModel);
@@ -89,11 +81,11 @@ public class ProcessMultipleModificationRestService implements CamundaRestServic
 
                 counter++;
             } else {
-                camundaApiUtils.logOperationException(tax[0], formModel.getProcessDefinitionKey());
+                camundaApiUtils.logOperationException(tax[0], Constants.PROCESS_DEFINITION_KEY);
             }
         }
 
-        log.info(taxItems.size() + " list items. " + counter + " successfull operations");
+        log.info("Done applications moving. " + counter + " successfull operations");
     }
 
     private String constructProcessInstanceModificationPath(ResponseEntity<CamundaProcessInstanceResponse[]> processInstanceResponse) {

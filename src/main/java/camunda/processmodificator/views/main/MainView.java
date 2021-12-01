@@ -1,6 +1,7 @@
 package camunda.processmodificator.views.main;
 
 import camunda.processmodificator.model.MainFormModel;
+import camunda.processmodificator.service.impl.MainRestService;
 import camunda.processmodificator.service.impl.ProcessMigrationRestService;
 import camunda.processmodificator.views.BaseForm;
 import camunda.processmodificator.views.MainLayout;
@@ -17,7 +18,7 @@ public class MainView extends HorizontalLayout {
     private BaseForm form;
     private MainFormModel formModel = new MainFormModel();
 
-    public MainView(ProcessMigrationRestService restService) {
+    public MainView(MainRestService restService) {
         addClassName("processmigrate-view");
         this.form = new MainForm(restService, this.formModel);
         add(form);

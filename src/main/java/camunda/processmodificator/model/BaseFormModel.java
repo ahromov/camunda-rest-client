@@ -14,6 +14,4 @@ public abstract class BaseFormModel {
     protected String serverAddress;
     protected String engineLogin;
     protected String enginePassword;
-    protected String processDefinitionKey;
-    protected String taxIDs;
 }
