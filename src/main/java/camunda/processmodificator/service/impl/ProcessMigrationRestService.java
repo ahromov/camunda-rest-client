@@ -1,6 +1,6 @@
 package camunda.processmodificator.service.impl;
 
-import camunda.processmodificator.configuration.Constants;
+import camunda.processmodificator.configuration.ProcessConstants;
 import camunda.processmodificator.dto.request.CamundaActivityInstanceRequest;
 import camunda.processmodificator.dto.request.CamundaProcessInstanceRequest;
 import camunda.processmodificator.dto.request.CamundaProcessMigrationRequest;
@@ -11,6 +11,8 @@ import camunda.processmodificator.model.BaseFormModel;
 import camunda.processmodificator.service.CamundaRestService;
 import camunda.processmodificator.service.routes.CamundaApiRoutes;
 import camunda.processmodificator.service.utils.CamundaApiUtils;
+import camunda.processmodificator.service.utils.FileLoader;
+import camunda.processmodificator.service.utils.IdStorage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -27,13 +29,19 @@ import java.util.List;
 @Slf4j
 public class ProcessMigrationRestService implements CamundaRestService {
 
-
     private final RestTemplate restTemplate;
     private final CamundaApiUtils camundaApiUtils;
+    private final FileLoader fileLoader;
+    private final IdStorage idStorage;
 
-    public ProcessMigrationRestService(RestTemplate restTemplate, CamundaApiUtils camundaApiUtils) {
+    public ProcessMigrationRestService(RestTemplate restTemplate,
+                                       CamundaApiUtils camundaApiUtils,
+                                       FileLoader fileLoader,
+                                       IdStorage idStorage) {
         this.restTemplate = restTemplate;
         this.camundaApiUtils = camundaApiUtils;
+        this.fileLoader = fileLoader;
+        this.idStorage = idStorage;
     }
 
     public void send(BaseFormModel formModel) {
@@ -41,7 +49,7 @@ public class ProcessMigrationRestService implements CamundaRestService {
 
         camundaApiUtils.authenticate(headers, formModel);
 
-        List<String[]> taxIDs = camundaApiUtils.parse(Constants.ipns);
+        List<String[]> taxIDs = camundaApiUtils.parse(fileLoader.getIpns());
 
         for (String[] tax : taxIDs) {
             int counter = 0;
@@ -53,13 +61,15 @@ public class ProcessMigrationRestService implements CamundaRestService {
 
             List<CamundaProcessInstanceResponse> camundaProcessInstanceResponse = camundaApiUtils.getObjects(processInstanceResponse);
             if (!camundaProcessInstanceResponse.isEmpty()) {
-                log.info("Contragent ID: " + tax[0] + ". His an applications = " + camundaProcessInstanceResponse.size() + ". Attempt migration the all applications!");
+                log.info("Contragent ID: " + tax[0] + ". His applications = " + camundaProcessInstanceResponse.size() + ". Attempt migration the all applications!");
 
                 for (CamundaProcessInstanceResponse processInstance : camundaProcessInstanceResponse) {
                     try {
                         if (camundaApiUtils.isProcessInstanceIncidents(formModel, headers, restTemplate, processInstance)) {
                             break;
                         }
+
+                        idStorage.getIds().put(processInstance.getId(), tax[0]);
 
                         HttpEntity<CamundaActivityInstanceRequest> activityInstanceRequestHttpEntity = camundaApiUtils.prepareActivityInstanceRequestHttpEntity(headers, processInstance);
 
@@ -81,7 +91,7 @@ public class ProcessMigrationRestService implements CamundaRestService {
 
                 log.info("Applications migration is done!. " + counter + " successfull operations");
             } else {
-                camundaApiUtils.logOperationException(tax[0], Constants.PROCESS_DEFINITION_KEY);
+                camundaApiUtils.logOperationException(tax[0], ProcessConstants.PROCESS_DEFINITION_KEY);
             }
         }
     }
@@ -92,7 +102,7 @@ public class ProcessMigrationRestService implements CamundaRestService {
         CamundaProcessMigrationRequest.Instructions instructions = getInstructions(activityInstanceResponse);
         CamundaProcessMigrationRequest.MigrationPlan migrationPlan = CamundaProcessMigrationRequest.MigrationPlan.builder()
                 .sourceProcessDefinitionId(currentProcessDefinitionId)
-                .targetProcessDefinitionId(Constants.targetProcessDefinitionId)
+                .targetProcessDefinitionId(fileLoader.getTargetProcessDefinitionId())
                 .instructions(Arrays.asList(instructions))
                 .build();
         CamundaProcessMigrationRequest camundaProcessInstanceMigrationRequest = CamundaProcessMigrationRequest.builder()
@@ -125,7 +135,7 @@ public class ProcessMigrationRestService implements CamundaRestService {
                     camundaProcessInstanceResponse.getId(),
                     camundaProcessInstanceResponse.getBusinessKey(),
                     camundaProcessInstanceResponse.getDefinitionId(),
-                    Constants.targetProcessDefinitionId);
+                    fileLoader.getTargetProcessDefinitionId());
         }
     }
 }

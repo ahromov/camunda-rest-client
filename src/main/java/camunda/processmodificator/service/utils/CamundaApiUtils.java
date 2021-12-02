@@ -1,6 +1,6 @@
 package camunda.processmodificator.service.utils;
 
-import camunda.processmodificator.configuration.Constants;
+import camunda.processmodificator.configuration.ProcessConstants;
 import camunda.processmodificator.dto.request.CamundaActivityInstanceRequest;
 import camunda.processmodificator.dto.request.CamundaProcessInstanceRequest;
 import camunda.processmodificator.dto.response.CamundaProcessIncidentsCountResponse;
@@ -35,7 +35,7 @@ public class CamundaApiUtils {
     public static HttpEntity<CamundaProcessInstanceRequest> prepareProcessInstanceRequestHttpEntity(HttpHeaders headers, String[] tax) {
         CamundaProcessInstanceRequest requestBody = CamundaProcessInstanceRequest.builder()
                 .businessKeyLike("%" + tax[0] + "%")
-                .processDefinitionKey(Constants.PROCESS_DEFINITION_KEY)
+                .processDefinitionKey(ProcessConstants.PROCESS_DEFINITION_KEY)
                 .build();
         return new HttpEntity<>(requestBody, headers);
     }
@@ -56,8 +56,15 @@ public class CamundaApiUtils {
     }
 
     public HttpEntity<CamundaActivityInstanceRequest> prepareActivityInstanceRequestHttpEntity(HttpHeaders headers, CamundaProcessInstanceResponse processInstanceResponse) {
+        return getActivityInstanceRequestHttpEntity(headers, processInstanceResponse.getId());
+    }
+
+    public HttpEntity<CamundaActivityInstanceRequest> prepareActivityInstanceRequestHttpEntity(HttpHeaders headers, String applicationId) {
+        return getActivityInstanceRequestHttpEntity(headers, applicationId);
+    }
+
+    private HttpEntity<CamundaActivityInstanceRequest> getActivityInstanceRequestHttpEntity(HttpHeaders headers, String id) {
         List<Map<String, String>> sortingParams = getSortingParams();
-        String id = processInstanceResponse.getId();
         CamundaActivityInstanceRequest camundaActivityInstanceRequest = CamundaActivityInstanceRequest.builder()
                 .processInstanceId(id)
                 .sorting(sortingParams)
