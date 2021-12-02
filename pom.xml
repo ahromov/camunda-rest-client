@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <!-- Vaadin project from https://start.vaadin.com/project/bd99f2c1-c121-42b8-a296-c657c4b0f8c9 -->
     <groupId>camunda.processmodificator</groupId>
@@ -216,8 +217,29 @@
                             <productionMode>true</productionMode>
                         </configuration>
                     </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <finalName>${project.artifactId}</finalName>
+                                    <appendAssemblyId>false</appendAssemblyId>
+                                    <descriptors>
+                                        <descriptor>src/main/assembly/zip.xml</descriptor>
+                                    </descriptors>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
+
         </profile>
 
         <profile>
@@ -246,22 +268,22 @@
                     </plugin>
 
                     <!-- Runs the integration tests (*IT) after the server is started -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <trimStackTrace>false</trimStackTrace>
-                            <enableAssertions>true</enableAssertions>
-                        </configuration>
-                    </plugin>
+                    <!--                    <plugin>-->
+                    <!--                        <groupId>org.apache.maven.plugins</groupId>-->
+                    <!--                        <artifactId>maven-failsafe-plugin</artifactId>-->
+                    <!--                        <executions>-->
+                    <!--                            <execution>-->
+                    <!--                                <goals>-->
+                    <!--                                    <goal>integration-test</goal>-->
+                    <!--                                    <goal>verify</goal>-->
+                    <!--                                </goals>-->
+                    <!--                            </execution>-->
+                    <!--                        </executions>-->
+                    <!--                        <configuration>-->
+                    <!--                            <trimStackTrace>false</trimStackTrace>-->
+                    <!--                            <enableAssertions>true</enableAssertions>-->
+                    <!--                        </configuration>-->
+                    <!--                    </plugin>-->
                 </plugins>
             </build>
         </profile>

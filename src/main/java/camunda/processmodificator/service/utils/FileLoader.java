@@ -17,9 +17,10 @@ import java.util.stream.Stream;
 @Slf4j
 public class FileLoader {
 
-    private final String TAXES_FILE = "IPN.txt";
-    private final String ACTIMITIES_FILE = "ACTIVITIES.txt";
-    private final String TARGET_PROCESS_DEFINITION_ID_FILE = "TARGET_DIFINITION_ID.txt";
+    private final String CONFIG_DIRECTORY = "conf/";
+    private final String TAXES_FILE = CONFIG_DIRECTORY + "IPN.txt";
+    private final String ACTIMITIES_FILE = CONFIG_DIRECTORY + "ACTIVITIES.txt";
+    private final String TARGET_PROCESS_DEFINITION_ID_FILE = CONFIG_DIRECTORY + "TARGET_DIFINITION_ID.txt";
 
     private String targetProcessDefinitionId = null;
     private String activities = null;
